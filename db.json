@@ -1,0 +1,1000 @@
+{
+  "categories": [
+    {
+      "id": "c1",
+      "name": "Alimentação",
+      "type": "Despesa",
+      "icon": "🍽️",
+      "color": "#f87171"
+    },
+    {
+      "id": "c2",
+      "name": "Transporte",
+      "type": "Despesa",
+      "icon": "🚗",
+      "color": "#fb923c"
+    },
+    {
+      "id": "c3",
+      "name": "Moradia",
+      "type": "Despesa",
+      "icon": "🏠",
+      "color": "#facc15"
+    },
+    {
+      "id": "c4",
+      "name": "Saúde",
+      "type": "Despesa",
+      "icon": "💊",
+      "color": "#4ade80"
+    },
+    {
+      "id": "c5",
+      "name": "Lazer",
+      "type": "Despesa",
+      "icon": "🎮",
+      "color": "#2dd4bf"
+    },
+    {
+      "id": "c6",
+      "name": "Educação",
+      "type": "Despesa",
+      "icon": "📚",
+      "color": "#60a5fa"
+    },
+    {
+      "id": "c7",
+      "name": "Vestuário",
+      "type": "Despesa",
+      "icon": "👕",
+      "color": "#c084fc"
+    },
+    {
+      "id": "c8",
+      "name": "Salário",
+      "type": "Receita",
+      "icon": "💰",
+      "color": "#10b981"
+    },
+    {
+      "id": "c9",
+      "name": "Investimento",
+      "type": "Receita",
+      "icon": "📈",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "c10",
+      "name": "Reserva E.",
+      "type": "Reserva",
+      "icon": "🏦",
+      "color": "#60a5fa"
+    },
+    {
+      "name": "Telefone e Internet",
+      "type": "Despesa",
+      "icon": "🎮",
+      "color": "#6366f1",
+      "id": "3yluklyi6"
+    },
+    {
+      "name": "Reembolso",
+      "type": "Receita",
+      "icon": "💸",
+      "color": "#6366f1",
+      "id": "1xrxxpfnw"
+    },
+    {
+      "name": "Repasse",
+      "type": "Despesa",
+      "icon": "📈",
+      "color": "#64b4f2",
+      "id": "z3c1t22nl"
+    },
+    {
+      "name": "Cartão de Credito",
+      "type": "Despesa",
+      "icon": "💳",
+      "color": "#64f288",
+      "id": "ezu2kjvkb",
+      "iconName": null
+    },
+    {
+      "name": "Assinaturas",
+      "type": "Despesa",
+      "icon": "📺",
+      "iconName": null,
+      "color": "#202893",
+      "id": "robvx78rv"
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Santander",
+      "type": "Corrente",
+      "balance": 4339.04,
+      "color": "#ff0000",
+      "id": "v80smpj8r"
+    },
+    {
+      "name": "PagBank",
+      "type": "Poupança",
+      "balance": 0,
+      "color": "#3b82f6",
+      "id": "nx0m4jc6n"
+    }
+  ],
+  "cards": [
+    {
+      "name": "Cartão Santander",
+      "flag": "Visa",
+      "digits": "6470",
+      "limit": 3969.58,
+      "closingDay": 27,
+      "dueDay": 6,
+      "color": "#ff0000",
+      "id": "155379nym"
+    }
+  ],
+  "family": [
+    {
+      "name": "André",
+      "relation": "Titular",
+      "id": "dt13ukl24"
+    },
+    {
+      "name": "Marlene",
+      "relation": "Mãe",
+      "id": "5jg4ernes"
+    },
+    {
+      "name": "Luiz",
+      "relation": "Pai",
+      "id": "1z5b88pv2"
+    },
+    {
+      "name": "Amanda",
+      "relation": "Cônjuge",
+      "id": "1wgz84qfx"
+    },
+    {
+      "name": "Carlos",
+      "relation": "Outro",
+      "id": "7ej1u4pyp"
+    }
+  ],
+  "transactions": [
+    {
+      "description": "Naturgy",
+      "amount": 71.48,
+      "type": "Despesa",
+      "date": "2026-04-06",
+      "categoryId": "c3",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "bel9bi052"
+    },
+    {
+      "description": "Transferência PIX",
+      "amount": 300,
+      "type": "Receita",
+      "date": "2026-04-06",
+      "categoryId": "c9",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "5jg4ernes",
+      "isPaid": true,
+      "notes": "",
+      "id": "phvdqs2y1"
+    },
+    {
+      "description": "Fatura Cartão Zinzane",
+      "amount": 78.99,
+      "type": "Despesa",
+      "date": "2026-04-06",
+      "categoryId": "ezu2kjvkb",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "8agmyqbkd"
+    },
+    {
+      "description": "Transferência PIX",
+      "amount": 36,
+      "type": "Receita",
+      "date": "2026-04-06",
+      "categoryId": "c1",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "7ej1u4pyp",
+      "isPaid": true,
+      "notes": "",
+      "id": "71twlax55"
+    },
+    {
+      "description": "Transferência PIX - Carlos",
+      "amount": 100,
+      "type": "Despesa",
+      "date": "2026-04-06",
+      "categoryId": "z3c1t22nl",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "5jg4ernes",
+      "isPaid": true,
+      "notes": "",
+      "id": "g9j9juzsk"
+    },
+    {
+      "description": "Mercadinho FrontPark",
+      "amount": 26.28,
+      "type": "Despesa",
+      "date": "2026-04-02",
+      "categoryId": "c1",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "i0dwvwy7z"
+    },
+    {
+      "description": "Mercadinho FrontPark",
+      "amount": 7.98,
+      "type": "Despesa",
+      "date": "2026-04-02",
+      "categoryId": "c1",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "xuazdsn4n"
+    },
+    {
+      "description": "Padaria Valdecir Alves",
+      "amount": 8,
+      "type": "Despesa",
+      "date": "2026-04-02",
+      "categoryId": "c1",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "zwkxjt3bb"
+    },
+    {
+      "description": "Transferência Pix - Marlene",
+      "amount": 822.36,
+      "type": "Receita",
+      "date": "2026-04-02",
+      "categoryId": "c8",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "5jg4ernes",
+      "isPaid": true,
+      "notes": "",
+      "id": "36z5nv0j5"
+    },
+    {
+      "description": "Pagamento Cartão de Credito Santander",
+      "amount": 3969.58,
+      "type": "Despesa",
+      "date": "2026-04-02",
+      "categoryId": "ezu2kjvkb",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "iaf0kk3zx"
+    },
+    {
+      "description": "FrontBar (Alex Leandro)",
+      "amount": 117.5,
+      "type": "Despesa",
+      "date": "2026-04-06",
+      "categoryId": "c5",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "jw9q0ex8q"
+    },
+    {
+      "description": "Reserva - Renegociação PagBank",
+      "amount": 396.23,
+      "type": "Reserva",
+      "date": "2026-04-06",
+      "categoryId": "c1",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "destinationAccountId": "nx0m4jc6n",
+      "id": "zky50s4ob"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-04-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "vjdw619g2",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-08-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "oqrgcmqly",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-09-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "wxelbi6lj",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-05-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "k6ll3wka5",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-06-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "6ht8vcvjd",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-07-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "dmai7zbdv",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-10-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "pzsad67hu",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-11-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "fqhlxga1u",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2026-12-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "pjfurt5ls",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2027-01-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "gpc4mpt4y",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2027-02-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "afo8n0i4f",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "HBO MAX",
+      "amount": 44.9,
+      "type": "Despesa",
+      "date": "2027-03-02",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "vjrdcxuug",
+      "groupId": "d07f0d82-bf42-4f34-b1c3-a7f06d8e5784"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-04-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "vrlwuepur",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-05-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "b9lfui5nc",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-06-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "uly4fsmh9",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-07-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "wq72ofi9s",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-08-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "im1vqegqp",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-09-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "r4c7z0j2h",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-10-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "tinihvgxp",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-11-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "q5rhy5ztv",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2026-12-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "xjovbb1ft",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2027-01-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "ku7o4rcu6",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2027-02-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "wgvimkq2t",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Debito Automático Claro Movel",
+      "amount": 169.9,
+      "type": "Despesa",
+      "date": "2027-03-10",
+      "categoryId": "3yluklyi6",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "gfqup0kq7",
+      "groupId": "20610114-6e34-4185-96f1-2e2067b30c20"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-04-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "s0fassynm",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-08-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "s30vjzrxm",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-09-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "ecibjtf7w",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-06-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "trnopfbtt",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-07-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "65gnrn2z8",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-05-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "ws5uwtq5n",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-10-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "merho6dvq",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-11-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "xhh9fyutj",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2026-12-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "q6a7hgthf",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2027-01-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "hf6lpjncl",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2027-02-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "5ua5wo307",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Microsoft GamePass",
+      "amount": 119.9,
+      "type": "Despesa",
+      "date": "2027-03-03",
+      "categoryId": "robvx78rv",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": false,
+      "notes": "",
+      "id": "w4ynxnz4y",
+      "groupId": "fb51c407-29b7-4a60-a99a-5fd8dd85d7b7"
+    },
+    {
+      "description": "Saque",
+      "amount": 750,
+      "type": "Despesa",
+      "date": "2026-04-05",
+      "categoryId": "z3c1t22nl",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "5jg4ernes",
+      "isPaid": true,
+      "notes": "",
+      "id": "dn8k6d38z"
+    },
+    {
+      "description": "Reembolso Edvaldo",
+      "amount": 95,
+      "type": "Receita",
+      "date": "2026-04-06",
+      "categoryId": "1xrxxpfnw",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "uwteayedz"
+    },
+    {
+      "description": "Escola de Musica",
+      "amount": 387,
+      "type": "Despesa",
+      "date": "2026-04-05",
+      "categoryId": "c6",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "wa2croijx"
+    },
+    {
+      "description": "Ingressos CInema",
+      "amount": 127,
+      "type": "Despesa",
+      "date": "2026-04-05",
+      "categoryId": "c5",
+      "paymentMethod": {
+        "type": "card",
+        "id": "155379nym"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "R$ 84,00 foram reembolsado pelo Edvaldo via Pix",
+      "id": "2lknktvjz"
+    },
+    {
+      "description": "Salario Mensal",
+      "amount": 1953.18,
+      "type": "Receita",
+      "date": "2026-04-06",
+      "categoryId": "c1",
+      "paymentMethod": {
+        "type": "account",
+        "id": "v80smpj8r"
+      },
+      "familyId": "dt13ukl24",
+      "isPaid": true,
+      "notes": "",
+      "id": "09ki7jp4g"
+    }
+  ]
+}
