@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import * as LucideIcons from 'lucide-react';
 const {
-  Home, Tags, Wallet, CreditCard: CardIcon, Users, List, AlertTriangle, Activity, Check
+  Home, Tags, Wallet, CreditCard: CardIcon, Users, List, AlertTriangle, Activity, Check, LogOut
 } = LucideIcons;
 
+import { AuthProvider, useAuth } from './core/AuthContext';
+import ProtectedRoute from './shared/components/ProtectedRoute';
 import { useFinance } from './features/transactions/useFinance';
 import DynamicIcon from './shared/components/DynamicIcon';
 import Modal from './shared/components/Modal';
@@ -13,10 +15,12 @@ import CreditCard from './shared/components/CreditCard';
 import DashboardView from './features/dashboard/DashboardView';
 import TransactionsView from './features/transactions/TransactionsView';
 
-export default function FinanceManager() {
-  const { data, loading, utils, operations } = useFinance();
+function FinanceManager() {
+  const { data, metrics, loading, utils, operations } = useFinance();
   const { formatMoney } = utils;
   const { saveItem, deleteItem } = operations;
+  const { todayISO } = metrics;
+  const { signOut, user } = useAuth();
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -55,7 +59,7 @@ export default function FinanceManager() {
 
   if (loading) return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-emerald-400 font-mono">
-      <Activity className="animate-spin mr-2"/> Carregando ControlFin v5.5...
+      <Activity className="animate-spin mr-2"/> Sincronizando com Supabase Cloud...
     </div>
   );
 
@@ -105,9 +109,7 @@ export default function FinanceManager() {
           <div><label className="block text-xs text-zinc-400 mb-1">Bandeira</label><select value={form.flag} onChange={e=>setForm({...form,flag:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"><option>Visa</option><option>Mastercard</option><option>Elo</option><option>Amex</option></select></div>
           <div><label className="block text-xs text-zinc-400 mb-1">Cor</label><input type="color" value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="w-full h-10 rounded border-0 bg-transparent cursor-pointer" /></div>
         </div>
-        <div className="grid grid-cols-1 gap-4">
-          <div><label className="block text-xs text-zinc-400 mb-1">Limite (R$)</label><input type="number" step="0.01" value={form.limit} onChange={e=>setForm({...form,limit: parseFloat(e.target.value) || 0})} className="font-mono w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
-        </div>
+        <div><label className="block text-xs text-zinc-400 mb-1">Limite (R$)</label><input type="number" step="0.01" value={form.limit} onChange={e=>setForm({...form,limit: parseFloat(e.target.value) || 0})} className="font-mono w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
         <button onClick={()=>handleSave(form, 'cards')} className="w-full bg-emerald-500 text-white rounded-lg py-2 mt-4 font-medium hover:bg-emerald-600 transition">Salvar Cartão</button>
       </div>
     );
@@ -145,12 +147,22 @@ export default function FinanceManager() {
             </button>
           ))}
         </nav>
+        <div className="p-4 border-t border-zinc-800">
+           <button onClick={signOut} className={`w-full flex items-center gap-3 p-3 rounded-xl text-zinc-500 hover:bg-rose-500/10 hover:text-rose-400 transition-all ${!isSidebarOpen && 'justify-center'}`}>
+             <LogOut size={20}/> {isSidebarOpen && <span>Sair</span>}
+           </button>
+        </div>
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
         <header className="h-16 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-20 flex items-center px-6 justify-between">
-           <h1 className="text-xl font-medium text-white capitalize">{activeTab}</h1>
-           <div className="w-8 h-8 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center font-bold text-sm">A</div>
+           <div className="flex items-center gap-4">
+              <h1 className="text-xl font-medium text-white capitalize">{activeTab}</h1>
+           </div>
+           <div className="flex items-center gap-4">
+              <span className="text-xs text-zinc-500 hidden md:block">{user?.email}</span>
+              <div className="w-8 h-8 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center font-bold text-sm">{user?.email[0].toUpperCase()}</div>
+           </div>
         </header>
 
         <div className="p-6 max-w-6xl mx-auto w-full">
@@ -229,5 +241,15 @@ export default function FinanceManager() {
 
       {feedback && <div className="fixed bottom-8 right-8 px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium animate-in slide-in-from-bottom"><Check size={20}/> Operação concluída!</div>}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <ProtectedRoute>
+        <FinanceManager />
+      </ProtectedRoute>
+    </AuthProvider>
   );
 }
