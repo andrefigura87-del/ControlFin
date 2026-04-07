@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  List, Search, Plus, Edit2, Trash2, CreditCard, Building, Activity, FileText 
+  List, Search, Edit2, Trash2, CreditCard, Building, Activity, FileText 
 } from 'lucide-react';
 import { NumericFormat } from 'react-number-format';
 import { useFinance } from './useFinance';
@@ -57,11 +57,13 @@ const TransactionsView = () => {
   };
 
   const FormTransaction = ({ item }) => {
+    const defaultWallet = data.accounts[0]?.id || '';
     const [form, setForm] = useState(item || {
       description: '', amount: '', type: 'Despesa', date: todayISO,
       categoryId: data.categories[0]?.id || '',
-      paymentMethod: { type: 'account', id: data.accounts[0]?.id || '' },
-      familyId: '', isPaid: true, isRecurring: false, notes: ''
+      paymentMethod: { type: 'account', id: defaultWallet },
+      familyId: '', isPaid: true, isRecurring: false, notes: '',
+      destinationAccountId: ''
     });
 
     const handleLocalSave = async () => {
@@ -84,25 +86,63 @@ const TransactionsView = () => {
         </div>
         
         <div className="grid grid-cols-1 gap-4">
-          <div><label className="block text-xs text-zinc-400 mb-1">Categoria</label>
-            <select value={form.categoryId} onChange={e=>setForm({...form, categoryId: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500">
-              {data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-            </select>
-          </div>
-          <div><label className="block text-xs text-zinc-400 mb-1">Fonte de Pagamento</label>
-            <select value={form.paymentMethod?.id} onChange={e => {
-              const account = data.accounts.find(a => a.id === e.target.value);
-              const card = data.cards.find(c => c.id === e.target.value);
-              setForm({...form, paymentMethod: { type: account ? 'account' : 'card', id: e.target.value }});
-            }} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500">
-              <optgroup label="Contas">
-                {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
-              </optgroup>
-              <optgroup label="Cartões">
-                {data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)}
-              </optgroup>
-            </select>
-          </div>
+          {form.type === 'Reserva' ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Origem (Saída)</label>
+                <select 
+                  value={form.paymentMethod?.id} 
+                  onChange={e => setForm({...form, paymentMethod: { type: 'account', id: e.target.value }})}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+                >
+                  <option value="">Selecione a Origem</option>
+                  {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Destino (Entrada)</label>
+                <select 
+                  value={form.destinationAccountId} 
+                  onChange={e => setForm({...form, destinationAccountId: e.target.value})}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+                >
+                  <option value="">Selecione o Destino</option>
+                  {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Categoria</label>
+                <select 
+                  value={form.categoryId} 
+                  onChange={e=>setForm({...form, categoryId: e.target.value})} 
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+                >
+                  {data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Fonte de Pagamento</label>
+                <select 
+                  value={form.paymentMethod?.id} 
+                  onChange={e => {
+                    const account = data.accounts.find(a => a.id === e.target.value);
+                    setForm({...form, paymentMethod: { type: account ? 'account' : 'card', id: e.target.value }});
+                  }} 
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+                >
+                  <optgroup label="Contas">
+                    {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
+                  </optgroup>
+                  <optgroup label="Cartões">
+                    {data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)}
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 py-2">
