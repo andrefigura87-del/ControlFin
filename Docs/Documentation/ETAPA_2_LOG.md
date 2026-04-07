@@ -1,7 +1,7 @@
 # ETAPA 2: REFATORAÇÃO FSD - LOG DE EXECUÇÃO
 
 Data: 07-04-2026
-Status: ✅ Concluído (Blocos A e B)
+Status: ✅ Concluída (Blocos A, B e C)
 
 ## Atividades Realizadas
 
@@ -19,11 +19,17 @@ Status: ✅ Concluído (Blocos A e B)
     - Toda a lógica de carregamento de dados foi movida para o hook, consumindo o `api.js` da Etapa 1.
     - Cálculos complexos de métricas (Saldo Total, Receitas/Despesas do Mês, Gráficos Recharts) foram memorizados com `useMemo`.
     - Lógica de persistência (`saveItem`, `deleteItem`) foi abstraída.
-- **Limpeza de Código**: O arquivo `App.jsx` foi reduzido em aproximadamente 350 linhas, tornando-se um orquestrador de componentes e abas.
 
-## Pendências de Documentação
-- A Etapa 2 (Bloco C) focará na extração da visualização completa do Dashboard para um componente de funcionalidade (`src/features/dashboard`).
+### 3. Bloco C: Extração da Feature Dashboard
+- **Componente `DashboardView.jsx`**: 
+    - Toda a interface da aba Dashboard foi movida para `src/features/dashboard/DashboardView.jsx`.
+    - O componente consome o hook `useFinance` internamente, mantendo a autonomia da funcionalidade (FSD pattern).
+- **Limpeza do `App.jsx`**: O arquivo principal agora é apenas um gerenciador de rotas/abas, com menos de 350 linhas totais (redução massiva de complexidade).
+
+## Conclusão da Etapa 2
+A arquitetura FSD está validada e funcional. O sistema está desacoplado e pronto para a migração de dados.
 
 ## Próximos Passos
-- Execução do Bloco C da Etapa 2.
-- Início da Etapa 3: Migração de Dados para Supabase.
+- **Etapa 3: DATA MIGRATION E SUPABASE**.
+    - Geração de Schema SQL.
+    - Script de Seed para migrar o `db.json` local para o Supabase.

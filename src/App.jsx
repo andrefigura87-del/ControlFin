@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import * as LucideIcons from 'lucide-react';
 const {
-  Home, Tags, Wallet, CreditCard: CardIcon, Users, List, Plus, Edit2, Trash2,
-  AlertTriangle, TrendingUp, TrendingDown, DollarSign, Activity, Check
+  Home, Tags, Wallet, CreditCard: CardIcon, Users, List, AlertTriangle, Activity, Check
 } = LucideIcons;
-import { NumericFormat } from 'react-number-format';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts';
 
 import { useFinance } from './features/transactions/useFinance';
 import DynamicIcon from './shared/components/DynamicIcon';
@@ -15,12 +10,13 @@ import Modal from './shared/components/Modal';
 import ListHeader from './shared/components/ListHeader';
 import AccountCard from './shared/components/AccountCard';
 import CreditCard from './shared/components/CreditCard';
+import DashboardView from './features/dashboard/DashboardView';
+import TransactionsView from './features/transactions/TransactionsView';
 
 export default function FinanceManager() {
-  const { data, metrics, loading, utils, operations } = useFinance();
-  const { formatMoney, formatDate } = utils;
+  const { data, loading, utils, operations } = useFinance();
+  const { formatMoney } = utils;
   const { saveItem, deleteItem } = operations;
-  const { totalBalance, monthReceitas, monthDespesas, monthReservas, expensesByCategory, maxExpense, chartData, todayISO } = metrics;
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -28,11 +24,6 @@ export default function FinanceManager() {
   const [editingItem, setEditingItem] = useState(null);
   const [deleteContext, setDeleteContext] = useState(null);
   const [feedback, setFeedback] = useState(null);
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [filterDateStart, setFilterDateStart] = useState('');
-  const [filterDateEnd, setFilterDateEnd] = useState('');
 
   const showFeedback = (type) => {
     setFeedback(type);
@@ -65,92 +56,6 @@ export default function FinanceManager() {
   if (loading) return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-emerald-400 font-mono">
       <Activity className="animate-spin mr-2"/> Carregando ControlFin v5.5...
-    </div>
-  );
-
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Saldo Total', val: totalBalance, icon: Wallet, color: 'text-white' },
-          { label: 'Receitas do Mês', val: monthReceitas, icon: TrendingUp, color: 'text-emerald-400' },
-          { label: 'Reservas do Mês', val: monthReservas, icon: DollarSign, color: 'text-blue-400' },
-          { label: 'Despesas do Mês', val: monthDespesas, icon: TrendingDown, color: 'text-rose-400' },
-        ].map((card, i) => (
-          <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg">
-            <div className="text-zinc-400 text-sm mb-1 flex items-center gap-2"><card.icon size={16}/> {card.label}</div>
-            <div className={`text-2xl md:text-3xl font-mono tracking-tight ${card.color}`}>{formatMoney(card.val)}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg">
-        <h3 className="text-lg font-medium text-emerald-400 mb-6 flex justify-between items-center">
-          <div className="flex items-center gap-2"><Activity size={18}/> Evolução de Liquidez Diária</div>
-        </h3>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-              <XAxis dataKey="day" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis hide />
-              <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} itemStyle={{ fontSize: '12px' }} />
-              <Area type="monotone" dataKey="Saldo Projetado" stroke="#71717a" strokeDasharray="5 5" fillOpacity={0} />
-              <Area type="monotone" dataKey="Saldo Real" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorReal)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg">
-          <h3 className="text-lg font-medium text-emerald-400 mb-4 flex items-center gap-2"><CardIcon size={18}/> Contas & Cartões</h3>
-          <div className="space-y-3">
-            {data.accounts.map(a => (
-              <AccountCard 
-                key={a.id} 
-                account={a} 
-                balance={a.balance + data.transactions.filter(t=>t.paymentMethod?.id === a.id && t.isPaid !== false).reduce((acc,t)=>acc+(t.type==='Despesa' || t.type==='Reserva'?-t.amount:t.amount),0)} 
-                formatMoney={formatMoney}
-                onEdit={(item)=> {setEditingItem(item); setModalType('account');}}
-                onDelete={(id, title)=> {setDeleteContext({id, collection: 'accounts', title}); setModalType('delete');}}
-              />
-            ))}
-            {data.cards.map(c => (
-              <CreditCard 
-                key={c.id} 
-                card={c} 
-                variant="compact"
-                used={data.transactions.filter(t => t.paymentMethod?.id === c.id && t.date <= todayISO).reduce((acc,t)=>acc+t.amount,0)}
-                formatMoney={formatMoney}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col">
-          <h3 className="text-lg font-medium text-emerald-400 mb-4 flex items-center gap-2"><Activity size={18}/> Despesas por Categoria</h3>
-          <div className="flex-1 space-y-4">
-            {expensesByCategory.map(c => (
-              <div key={c.id} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <div className="flex items-center gap-2 text-zinc-300"><span>{c.icon}</span> {c.name}</div>
-                  <div className="font-mono text-zinc-400">{formatMoney(c.total)}</div>
-                </div>
-                <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-1000" style={{width: `${(c.total / maxExpense) * 100}%`, backgroundColor: c.color}} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 
@@ -191,31 +96,30 @@ export default function FinanceManager() {
     );
   };
 
-  const FormTransaction = ({ item }) => {
-    const [form, setForm] = useState(item || {
-      description: '', amount: '', type: 'Despesa', date: todayISO,
-      categoryId: data.categories[0]?.id || '',
-      paymentMethod: { type: 'account', id: data.accounts[0]?.id || '' },
-      familyId: '', isPaid: true, isRecurring: false, notes: ''
-    });
-
+  const FormCard = ({ item }) => {
+    const [form, setForm] = useState(item || { name: '', flag: 'Visa', limit: 0, color: '#8b5cf6', digits: '', closingDay: 1, dueDay: 10 });
     return (
       <div className="space-y-4">
-        <div className="flex gap-2 p-1 bg-zinc-950 rounded-lg">
-          {['Despesa', 'Receita', 'Reserva'].map(t => (
-            <button key={t} onClick={()=>setForm({...form, type: t})} className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${form.type === t ? 'bg-emerald-500/10 text-emerald-400' : 'text-zinc-500'}`}>{t}</button>
-          ))}
-        </div>
-        <div><label className="block text-xs text-zinc-400 mb-1">Descrição</label><input autoFocus value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
+        <div><label className="block text-xs text-zinc-400 mb-1">Nome do Cartão</label><input autoFocus value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-xs text-zinc-400 mb-1">Valor</label><NumericFormat value={form.amount} onValueChange={(v)=>setForm({...form, amount: v.floatValue})} prefix="R$ " thousandSeparator="." decimalSeparator="," decimalScale={2} fixedDecimalScale className="font-mono w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
-          <div><label className="block text-xs text-zinc-400 mb-1">Data</label><input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500 [color-scheme:dark]" /></div>
+          <div><label className="block text-xs text-zinc-400 mb-1">Bandeira</label><select value={form.flag} onChange={e=>setForm({...form,flag:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"><option>Visa</option><option>Mastercard</option><option>Elo</option><option>Amex</option></select></div>
+          <div><label className="block text-xs text-zinc-400 mb-1">Cor</label><input type="color" value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="w-full h-10 rounded border-0 bg-transparent cursor-pointer" /></div>
         </div>
-        <div className="flex items-center gap-2 py-2">
-            <input type="checkbox" checked={form.isPaid} onChange={e=>setForm({...form, isPaid: e.target.checked})} className="accent-emerald-500" />
-            <span className="text-sm text-zinc-300">Efetivado (Pago/Recebido)</span>
+        <div className="grid grid-cols-1 gap-4">
+          <div><label className="block text-xs text-zinc-400 mb-1">Limite (R$)</label><input type="number" step="0.01" value={form.limit} onChange={e=>setForm({...form,limit: parseFloat(e.target.value) || 0})} className="font-mono w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
         </div>
-        <button onClick={()=>handleSave(form, 'transactions')} disabled={!form.amount} className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-medium rounded-xl py-3 transition">Salvar Transação</button>
+        <button onClick={()=>handleSave(form, 'cards')} className="w-full bg-emerald-500 text-white rounded-lg py-2 mt-4 font-medium hover:bg-emerald-600 transition">Salvar Cartão</button>
+      </div>
+    );
+  };
+
+  const FormFamily = ({ item }) => {
+    const [form, setForm] = useState(item || { name: '', relation: 'Outro' });
+    return (
+      <div className="space-y-4">
+        <div><label className="block text-xs text-zinc-400 mb-1">Nome</label><input autoFocus value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
+        <div><label className="block text-xs text-zinc-400 mb-1">Relação</label><input  value={form.relation} onChange={e=>setForm({...form,relation:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
+        <button onClick={()=>handleSave(form, 'family')} className="w-full bg-emerald-500 text-white rounded-lg py-2 mt-4 font-medium hover:bg-emerald-600 transition">Salvar Familiar</button>
       </div>
     );
   };
@@ -250,20 +154,15 @@ export default function FinanceManager() {
         </header>
 
         <div className="p-6 max-w-6xl mx-auto w-full">
-          {activeTab === 'dashboard' && renderDashboard()}
-          {activeTab === 'transactions' && (
-            <div>
-              <ListHeader title="Transações" icon={List} onAdd={()=>setModalType('transaction')} />
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-lg overflow-hidden flex flex-col mb-8">
-                <div className="p-4 border-b border-zinc-800 grid grid-cols-1 md:grid-cols-3 gap-4 bg-zinc-950/50">
-                  <input value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="Burcar descrição..." className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500" />
-                  <select value={filterCategory} onChange={e=>setFilterCategory(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"><option value="">Todas Categorias</option>{data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select>
-                  <button onClick={()=>{setSearchTerm(''); setFilterCategory(''); setFilterDateStart(''); setFilterDateEnd('');}} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-400 transition">Limpar Filtros</button>
-                </div>
-                <div className="p-8 text-center text-zinc-500 italic">As transações serão exibidas aqui... (Refatoração de Tabela pendente no Bloco C)</div>
-              </div>
-            </div>
+          {activeTab === 'dashboard' && (
+            <DashboardView 
+              onEditAccount={(i)=>{setEditingItem(i); setModalType('account');}} 
+              onDeleteAccount={(id,t)=>{setDeleteContext({id,collection:'accounts',title:t}); setModalType('delete');}} 
+            />
           )}
+
+          {activeTab === 'transactions' && <TransactionsView />}
+
           {activeTab === 'accounts' && (
              <div>
                 <ListHeader title="Contas Correntes" icon={Wallet} onAdd={() => { setEditingItem(null); setModalType('account'); }} />
@@ -287,7 +186,7 @@ export default function FinanceManager() {
                   {data.categories.map(c => (
                     <div key={c.id} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center group">
                       <div className="flex items-center gap-2"><span>{c.icon}</span> <span className="text-sm">{c.name}</span></div>
-                      <button onClick={()=>{setEditingItem(c); setModalType('category');}} className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-emerald-400"><Edit2 size={14}/></button>
+                      <button onClick={()=>{setEditingItem(c); setModalType('category');}} className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-emerald-400"><LucideIcons.Edit2 size={14}/></button>
                     </div>
                   ))}
                 </div>
@@ -312,7 +211,8 @@ export default function FinanceManager() {
 
       {modalType === 'category' && <Modal title={editingItem?'Editar':'Nova'} onClose={()=>setModalType(null)}><FormCategory item={editingItem}/></Modal>}
       {modalType === 'account' && <Modal title={editingItem?'Editar':'Nova'} onClose={()=>setModalType(null)}><FormAccount item={editingItem}/></Modal>}
-      {modalType === 'transaction' && <Modal title={editingItem?'Editar':'Nova'} onClose={()=>setModalType(null)}><FormTransaction item={editingItem}/></Modal>}
+      {modalType === 'card' && <Modal title={editingItem?'Editar':'Novo'} onClose={()=>setModalType(null)}><FormCard item={editingItem}/></Modal>}
+      {modalType === 'family' && <Modal title={editingItem?'Editar':'Novo'} onClose={()=>setModalType(null)}><FormFamily item={editingItem}/></Modal>}
       
       {modalType === 'delete' && (
         <Modal title="Confirmar Exclusão" onClose={()=>setModalType(null)}>
