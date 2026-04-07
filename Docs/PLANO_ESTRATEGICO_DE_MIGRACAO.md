@@ -47,3 +47,10 @@ Os dados já estão no Supabase. O passo final é a segurança e a conexão do F
 2. Crie o componente `<ProtectedRoute>` que redireciona para a tela de `/login` caso o token não exista (Zero Trust).
 3. Refatore o nosso `src/services/api.js` (criado na Etapa 1). Substitua os comandos `fetch` nativos pelos comandos do SDK `@supabase/supabase-js`, mantendo as mesmas assinaturas de função para não quebrar os componentes do React.
 4. Forneça o checklist de Variáveis de Ambiente necessárias para o Deploy na Vercel.
+
+[ETAPA 5: DEPLOY CLOUD E EXPERIÊNCIA MOBILE (PWA)]
+O ControlFin v5.5 agora se torna um produto real pronto para uso.
+
+1. **Build de Produção**: Otimize o `vite.config.js` e configure o `vercel.json` para suportar SPAs (Single Page Applications) sem erros de redirecionamento.
+2. **PWA (Progressive Web App)**: Implemente o `vite-plugin-pwa` com manifesto customizado (#10b981), service worker e ícones, permitindo a instalação nativa em Android e iOS.
+3. **Go-Live Vercel**: Documente o processo de conexão GitHub -> Vercel e o setup seguro das variáveis de ambiente de produção.

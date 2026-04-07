@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import * as api from '../../services/api';
+import { useAuth } from '../../core/AuthContext';
 
 export function useFinance() {
+  const { user } = useAuth();
   const [data, setData] = useState({
     categories: [],
     accounts: [],
@@ -11,9 +13,12 @@ export function useFinance() {
   });
   const [loading, setLoading] = useState(true);
 
-  // Inicialização
+  // Inicialização (HOTFIX: Impedir loop infinito e carregar apenas quando logado)
   useEffect(() => {
+    if (!user) return; // Só dispara se houver um usuário autenticado
+
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [categories, accounts, cards, family, transactions] = await Promise.all([
           api.getCategories(),
@@ -29,8 +34,9 @@ export function useFinance() {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, []);
+  }, [user?.id]); // Dependência no ID do usuário para reagir a login/logout
 
   // HELPERS
   const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -114,8 +120,8 @@ export function useFinance() {
       monthReservas,
       expensesByCategory,
       maxExpense,
-      chartData,
       todayISO,
+      chartData,
       monthTransactions
     };
   }, [data, todayISO]);
