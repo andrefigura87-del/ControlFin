@@ -21,6 +21,7 @@ Status: ✅ Concluída (PROJETO FINALIZADO)
 ## Hotfixes de Compatibilidade
 - **[HOTFIX]**: Criado `.npmrc` com `legacy-peer-deps=true` para resolver conflitos entre React 19 e plugins PWA no ambiente Vercel.
 - **[HOTFIX]**: Ajuste no `vite.config.js` para contornar falha no build (assets ausentes). Removidas referências a ícones `.png` inexistentes que bloqueavam a geração do Service Worker na Vercel.
+- **[HOTFIX]**: Resolvido conflito de importação no Rolldown (Vite 8). Adicionado alias explícito para `react-is` e ajustes em `commonjsOptions`, corrigindo falha de build causada pela árvore de dependências do Recharts.
 
 ---
 
