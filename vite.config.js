@@ -37,6 +37,13 @@ export default defineConfig({
   build: {
     commonjsOptions: {
       include: [/react-is/, /node_modules/],
+    },
+    // Limpeza de logs do Rolldown (Suprimir avisos de plugins PWA legados)
+    rolldownOptions: {
+      onLog(level, log, defaultHandler) {
+        if (log.message.includes('assigns to bundle variable')) return;
+        defaultHandler(level, log);
+      }
     }
   }
 })
