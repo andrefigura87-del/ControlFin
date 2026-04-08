@@ -87,6 +87,32 @@ const toSnake = (obj) => {
   return mapped;
 };
 
+/** 🧼 SANITIZER: Filtra apenas colunas permitidas (Whitelist) por tabela */
+const sanitizePayload = (tableName, data) => {
+  const whitelists = {
+    categories: ['name', 'icon', 'color', 'type'],
+    wallets: ['name', 'balance', 'color'],
+    cards: ['name', 'limit_amount', 'closing_day', 'due_day', 'digits', 'color', 'flag'],
+    family_members: ['name', 'relation'],
+    transactions: [
+      'description', 'amount', 'date', 'type', 'is_paid', 'is_recurring', 
+      'category_id', 'family_member_id', 'wallet_id', 'card_id', 
+      'destination_wallet_id', 'notes'
+    ]
+  };
+
+  const allowed = whitelists[tableName] || [];
+  const sanitized = {};
+  
+  allowed.forEach(key => {
+    if (data[key] !== undefined) {
+      sanitized[key] = data[key];
+    }
+  });
+
+  return sanitized;
+};
+
 // --- HELPER DE EXECUÇÃO ---
 
 const execute = async (query) => {
@@ -104,13 +130,16 @@ export const getCategories = () =>
 
 export const createCategory = async (data) => {
   const { data: { user } } = await supabase.auth.getUser();
-  return execute(supabase.from('categories').insert({ ...toSnake(data), user_id: user.id }).select())
+  const payload = sanitizePayload('categories', toSnake(data));
+  return execute(supabase.from('categories').insert({ ...payload, user_id: user.id }).select())
     .then(rows => toCamel(rows[0]));
 };
 
-export const updateCategory = (id, data) => 
-  execute(supabase.from('categories').update(toSnake(data)).eq('id', id).select())
+export const updateCategory = (id, data) => {
+  const payload = sanitizePayload('categories', toSnake(data));
+  return execute(supabase.from('categories').update(payload).eq('id', id).select())
     .then(rows => toCamel(rows[0]));
+};
 
 export const deleteCategory = (id) => 
   execute(supabase.from('categories').update({ deleted_at: new Date() }).eq('id', id));
@@ -123,13 +152,16 @@ export const getAccounts = () =>
 
 export const createAccount = async (data) => {
   const { data: { user } } = await supabase.auth.getUser();
-  return execute(supabase.from('wallets').insert({ ...toSnake(data), user_id: user.id }).select())
+  const payload = sanitizePayload('wallets', toSnake(data));
+  return execute(supabase.from('wallets').insert({ ...payload, user_id: user.id }).select())
     .then(rows => toCamel(rows[0]));
 };
 
-export const updateAccount = (id, data) => 
-  execute(supabase.from('wallets').update(toSnake(data)).eq('id', id).select())
+export const updateAccount = (id, data) => {
+  const payload = sanitizePayload('wallets', toSnake(data));
+  return execute(supabase.from('wallets').update(payload).eq('id', id).select())
     .then(rows => toCamel(rows[0]));
+};
 
 export const deleteAccount = (id) => 
   execute(supabase.from('wallets').update({ deleted_at: new Date() }).eq('id', id));
@@ -142,13 +174,16 @@ export const getCards = () =>
 
 export const createCard = async (data) => {
   const { data: { user } } = await supabase.auth.getUser();
-  return execute(supabase.from('cards').insert({ ...toSnake(data), user_id: user.id }).select())
+  const payload = sanitizePayload('cards', toSnake(data));
+  return execute(supabase.from('cards').insert({ ...payload, user_id: user.id }).select())
     .then(rows => toCamel(rows[0]));
 };
 
-export const updateCard = (id, data) => 
-  execute(supabase.from('cards').update(toSnake(data)).eq('id', id).select())
+export const updateCard = (id, data) => {
+  const payload = sanitizePayload('cards', toSnake(data));
+  return execute(supabase.from('cards').update(payload).eq('id', id).select())
     .then(rows => toCamel(rows[0]));
+};
 
 export const deleteCard = (id) => 
   execute(supabase.from('cards').update({ deleted_at: new Date() }).eq('id', id));
@@ -161,13 +196,16 @@ export const getFamily = () =>
 
 export const createFamily = async (data) => {
   const { data: { user } } = await supabase.auth.getUser();
-  return execute(supabase.from('family_members').insert({ ...toSnake(data), user_id: user.id }).select())
+  const payload = sanitizePayload('family_members', toSnake(data));
+  return execute(supabase.from('family_members').insert({ ...payload, user_id: user.id }).select())
     .then(rows => toCamel(rows[0]));
 };
 
-export const updateFamily = (id, data) => 
-  execute(supabase.from('family_members').update(toSnake(data)).eq('id', id).select())
+export const updateFamily = (id, data) => {
+  const payload = sanitizePayload('family_members', toSnake(data));
+  return execute(supabase.from('family_members').update(payload).eq('id', id).select())
     .then(rows => toCamel(rows[0]));
+};
 
 export const deleteFamily = (id) => 
   execute(supabase.from('family_members').update({ deleted_at: new Date() }).eq('id', id));
@@ -180,13 +218,16 @@ export const getTransactions = () =>
 
 export const createTransaction = async (data) => {
   const { data: { user } } = await supabase.auth.getUser();
-  return execute(supabase.from('transactions').insert({ ...toSnake(data), user_id: user.id }).select())
+  const payload = sanitizePayload('transactions', toSnake(data));
+  return execute(supabase.from('transactions').insert({ ...payload, user_id: user.id }).select())
     .then(rows => toCamel(rows[0]));
 };
 
-export const updateTransaction = (id, data) => 
-  execute(supabase.from('transactions').update(toSnake(data)).eq('id', id).select())
+export const updateTransaction = (id, data) => {
+  const payload = sanitizePayload('transactions', toSnake(data));
+  return execute(supabase.from('transactions').update(payload).eq('id', id).select())
     .then(rows => toCamel(rows[0]));
+};
 
 export const deleteTransaction = (id) => 
   execute(supabase.from('transactions').update({ deleted_at: new Date() }).eq('id', id));
