@@ -14,6 +14,7 @@ import AccountCard from './shared/components/AccountCard';
 import CreditCard from './shared/components/CreditCard';
 import DashboardView from './features/dashboard/DashboardView';
 import TransactionsView from './features/transactions/TransactionsView';
+import FamilyView from './features/family/FamilyView';
 
 function FinanceManager() {
   const { data, metrics, loading, utils, operations } = useFinance();
@@ -205,18 +206,11 @@ function FinanceManager() {
              </div>
           )}
           {activeTab === 'family' && (
-             <div>
-                <ListHeader title="Família" icon={Users} onAdd={() => { setEditingItem(null); setModalType('family'); }} />
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {data.family.map(f => (
-                    <div key={f.id} className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 text-center">
-                      <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-lg font-bold">{f.name[0]}</div>
-                      <div className="font-medium">{f.name}</div>
-                      <div className="text-xs text-zinc-500">{f.relation}</div>
-                    </div>
-                  ))}
-                </div>
-             </div>
+             <FamilyView 
+                onAdd={() => { setEditingItem(null); setModalType('family'); }}
+                onEdit={(item) => { setEditingItem(item); setModalType('family'); }}
+                onDelete={(id, title) => { setDeleteContext({ id, collection: 'family', title }); setModalType('delete'); }}
+             />
           )}
         </div>
       </main>

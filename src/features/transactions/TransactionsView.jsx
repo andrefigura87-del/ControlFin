@@ -198,16 +198,15 @@ const TransactionsView = () => {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div className="flex-1 w-full md:w-auto">
-          <ListHeader title="Transações" icon={List} onAdd={() => { setEditingItem(null); setModalType('transaction'); }} />
-        </div>
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-          <button onClick={handleExportCSV} className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-xl flex items-center gap-2 border border-zinc-700 transition text-sm">
-            <FileText size={18}/> Exportar CSV
-          </button>
-        </div>
-      </div>
+      <ListHeader 
+        title="Transações" 
+        icon={List} 
+        onAdd={() => { setEditingItem(null); setModalType('transaction'); }}
+      >
+        <button onClick={handleExportCSV} className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-xl flex items-center gap-2 border border-zinc-700 transition text-sm">
+          <FileText size={18}/> Exportar CSV
+        </button>
+      </ListHeader>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-lg overflow-hidden flex flex-col mb-8">
         <div className="p-4 border-b border-zinc-800 grid grid-cols-1 md:grid-cols-4 gap-4 bg-zinc-950/50">
