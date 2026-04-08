@@ -90,6 +90,7 @@ export function useFinance() {
     const maxExpense = expensesByCategory.length ? Math.max(...expensesByCategory.map(c => c.total)) : 1;
 
     // RECHARTS DATA PREP
+    const baseAccountBalance = data.accounts.reduce((acc, a) => acc + (a.balance || 0), 0);
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const chartData = [];
     let runningReal = baseAccountBalance;
