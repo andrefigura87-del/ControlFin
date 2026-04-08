@@ -72,6 +72,14 @@ export function useFinance() {
       return { ...a, currentBalance: (a.balance || 0) + credits - debits };
     });
 
+    // Cálculo de gastos e limite de cartões (Enriquecimento)
+    const enrichedCards = data.cards.map(c => {
+      const used = data.transactions
+        .filter(t => t.paymentMethod?.type === 'card' && t.paymentMethod?.id === c.id && t.type === 'Despesa')
+        .reduce((sum, t) => sum + t.amount, 0);
+      return { ...c, used, availableLimit: (c.limit || 0) - used };
+    });
+
     const totalBalance = enrichedAccounts.reduce((acc, a) => acc + a.currentBalance, 0);
 
     // Métricas do Mês (Considerando Efetivado OU <= Hoje)
@@ -128,7 +136,8 @@ export function useFinance() {
       todayISO,
       chartData,
       monthTransactions,
-      enrichedAccounts
+      enrichedAccounts,
+      enrichedCards
     };
   }, [data, todayISO]);
 

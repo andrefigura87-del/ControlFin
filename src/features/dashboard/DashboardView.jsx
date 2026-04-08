@@ -81,12 +81,12 @@ const DashboardView = ({ onEditAccount, onDeleteAccount }) => {
                 onDelete={onDeleteAccount}
               />
             ))}
-            {data.cards.map(c => (
+            {metrics.enrichedCards.map(c => (
               <CreditCard 
                 key={c.id} 
                 card={c} 
                 variant="compact"
-                used={data.transactions.filter(t => t.paymentMethod?.id === c.id && t.date <= todayISO).reduce((acc,t)=>acc+t.amount,0)}
+                used={c.used}
                 formatMoney={formatMoney}
               />
             ))}
