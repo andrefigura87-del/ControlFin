@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# --- ControlFin Specific ---
+
+# Backup de Migração (Dados Legados)
+archive/
+db.json
+seed.cjs
+
+# Segredos e Configurações de Ambiente
+.env
+.env.production
+.env.local
+
+# Vercel e Builds
+.vercel
+.output

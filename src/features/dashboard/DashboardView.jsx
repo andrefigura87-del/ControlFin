@@ -71,11 +71,11 @@ const DashboardView = ({ onEditAccount, onDeleteAccount }) => {
             <CardIcon size={18}/> Contas & Cartões
           </h3>
           <div className="space-y-3">
-            {data.accounts.map(a => (
+            {metrics.enrichedAccounts.map(a => (
               <AccountCard 
                 key={a.id} 
                 account={a} 
-                balance={a.balance + data.transactions.filter(t=>t.paymentMethod?.id === a.id && t.isPaid !== false).reduce((acc,t)=>acc+(t.type==='Despesa' || t.type==='Reserva'?-t.amount:t.amount),0)} 
+                balance={a.currentBalance} 
                 formatMoney={formatMoney}
                 onEdit={onEditAccount}
                 onDelete={onDeleteAccount}

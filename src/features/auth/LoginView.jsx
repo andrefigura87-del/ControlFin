@@ -34,7 +34,7 @@ const LoginView = () => {
              <Activity size={32}/>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">ControlFin Cloud</h1>
-          <p className="text-zinc-500 text-sm mt-1">Acesse sua plataforma financeira v5.5</p>
+          <p className="text-zinc-500 text-sm mt-1">Acesse sua plataforma financeira v5.6</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4 relative z-10">

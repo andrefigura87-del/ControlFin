@@ -179,7 +179,7 @@ function FinanceManager() {
              <div>
                 <ListHeader title="Contas Correntes" icon={Wallet} onAdd={() => { setEditingItem(null); setModalType('account'); }} />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {data.accounts.map(a => <AccountCard key={a.id} account={a} balance={a.balance} formatMoney={formatMoney} onEdit={(i)=>{setEditingItem(i); setModalType('account');}} onDelete={(id,t)=>{setDeleteContext({id,collection:'accounts',title:t}); setModalType('delete');}} />)}
+                  {metrics.enrichedAccounts.map(a => <AccountCard key={a.id} account={a} balance={a.currentBalance} formatMoney={formatMoney} onEdit={(i)=>{setEditingItem(i); setModalType('account');}} onDelete={(id,t)=>{setDeleteContext({id,collection:'accounts',title:t}); setModalType('delete');}} />)}
                 </div>
              </div>
           )}

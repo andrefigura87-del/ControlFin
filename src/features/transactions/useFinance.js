@@ -54,21 +54,25 @@ export function useFinance() {
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
 
-    // Saldo Total (Contas + Transações Efetivadas)
-    const baseAccountBalance = data.accounts.reduce((acc, a) => acc + a.balance, 0);
-    const effectiveTransactionBalance = data.transactions
-      .filter(t => t.paymentMethod?.type === 'account' && t.isPaid !== false)
-      .reduce((acc, t) => {
-        const val = t.type === 'Receita' ? t.amount : -t.amount;
-        return acc + val;
-      }, 0);
-    
-    // Transferências/Reservas (Double-Entry fix)
-    const destinationReservas = data.transactions
-      .filter(t => t.type === 'Reserva' && t.destinationAccountId && t.isPaid !== false)
-      .reduce((acc, t) => acc + t.amount, 0);
+    // Cálculo de saldo por conta (Enriquecimento)
+    const enrichedAccounts = data.accounts.map(a => {
+      const txs = data.transactions.filter(t => t.isPaid !== false);
+      
+      // Entradas: Receitas na conta OU Reservas destinadas a esta conta
+      const credits = txs.filter(t => 
+        (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && t.type === 'Receita') ||
+        (t.type === 'Reserva' && t.destinationAccountId === a.id)
+      ).reduce((sum, t) => sum + t.amount, 0);
 
-    const totalBalance = baseAccountBalance + effectiveTransactionBalance + destinationReservas;
+      // Saídas: Despesas na conta OU Reservas saindo desta conta
+      const debits = txs.filter(t => 
+        (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && (t.type === 'Despesa' || t.type === 'Reserva'))
+      ).reduce((sum, t) => sum + t.amount, 0);
+
+      return { ...a, currentBalance: (a.balance || 0) + credits - debits };
+    });
+
+    const totalBalance = enrichedAccounts.reduce((acc, a) => acc + a.currentBalance, 0);
 
     // Métricas do Mês (Considerando Efetivado OU <= Hoje)
     const filterRule = (t) => t.isPaid !== false || t.date <= todayISO;
@@ -122,7 +126,8 @@ export function useFinance() {
       maxExpense,
       todayISO,
       chartData,
-      monthTransactions
+      monthTransactions,
+      enrichedAccounts
     };
   }, [data, todayISO]);
 

@@ -6,6 +6,13 @@
 
 import { supabase } from '../lib/supabase';
 
+// --- HELPERS DE FORMATAÇÃO ---
+const formatDate = (date) => {
+  if (!date) return null;
+  if (typeof date === 'string') return date.split('T')[0];
+  return new Date(date).toISOString().split('T')[0];
+};
+
 // --- ADAPTERS (TRANSFORMAÇÃO DE DADOS) ---
 
 const toCamel = (obj) => {
@@ -15,8 +22,9 @@ const toCamel = (obj) => {
     categoryId: obj.category_id,
     familyId: obj.family_member_id,
     isPaid: obj.is_paid,
-    isRecurring: obj.is_recurring, // Adicionado
+    isRecurring: obj.is_recurring,
     groupId: obj.group_id,
+    date: formatDate(obj.date),
     destinationAccountId: obj.destination_wallet_id,
     limit: obj.limit_amount,
     closingDay: obj.closing_day,
@@ -47,8 +55,9 @@ const toSnake = (obj) => {
     category_id: obj.categoryId,
     family_member_id: obj.familyId,
     is_paid: obj.isPaid,
-    is_recurring: obj.isRecurring, // Adicionado
+    is_recurring: obj.isRecurring,
     group_id: obj.groupId,
+    date: formatDate(obj.date),
     destination_wallet_id: obj.destinationAccountId,
     limit_amount: obj.limit,
     closing_day: obj.closingDay,

@@ -60,11 +60,21 @@ const TransactionsView = () => {
     const defaultWallet = data.accounts[0]?.id || '';
     const [form, setForm] = useState(item || {
       description: '', amount: '', type: 'Despesa', date: todayISO,
-      categoryId: data.categories[0]?.id || '',
+      categoryId: data.categories.find(c => c.type === 'Despesa')?.id || data.categories[0]?.id || '',
       paymentMethod: { type: 'account', id: defaultWallet },
-      familyId: '', isPaid: true, isRecurring: false, notes: '',
+      familyId: data.family[0]?.id || '', isPaid: true, isRecurring: false, notes: '',
       destinationAccountId: ''
     });
+
+    // Lógica para Tipo Reserva: Forçar categoria e limpar destino se não for reserva
+    React.useEffect(() => {
+      if (form.type === 'Reserva') {
+        const reservaCat = data.categories.find(c => c.type === 'Reserva' || c.name.includes('Reserva'));
+        if (reservaCat && form.categoryId !== reservaCat.id) {
+          setForm(prev => ({ ...prev, categoryId: reservaCat.id }));
+        }
+      }
+    }, [form.type, data.categories]);
 
     const handleLocalSave = async () => {
       await saveItem(form, 'transactions');
@@ -120,7 +130,7 @@ const TransactionsView = () => {
                   onChange={e=>setForm({...form, categoryId: e.target.value})} 
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
                 >
-                  {data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  {data.categories.filter(c => c.type === form.type || form.type === 'Transferência').map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
               </div>
               <div>
@@ -145,9 +155,38 @@ const TransactionsView = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2 py-2">
-            <input type="checkbox" checked={form.isPaid} onChange={e=>setForm({...form, isPaid: e.target.checked})} className="accent-emerald-500" />
-            <span className="text-sm text-zinc-300">Efetivado (Pago/Recebido)</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Familiar</label>
+            <select 
+              value={form.familyId} 
+              onChange={e=>setForm({...form, familyId: e.target.value})} 
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+            >
+              <option value="">Selecione o Membro</option>
+              {data.family.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-4 mt-5">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.isPaid} onChange={e=>setForm({...form, isPaid: e.target.checked})} className="accent-emerald-500 w-4 h-4" />
+              <span className="text-sm text-zinc-300">Efetivado</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.isRecurring} onChange={e=>setForm({...form, isRecurring: e.target.checked})} className="accent-emerald-500 w-4 h-4" />
+              <span className="text-sm text-zinc-300">Mensal</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs text-zinc-400 mb-1">Observações</label>
+          <textarea 
+            value={form.notes} 
+            onChange={e=>setForm({...form, notes: e.target.value})} 
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500 min-h-[80px]"
+            placeholder="Detalhes adicionais..."
+          />
         </div>
 
         <button onClick={handleLocalSave} disabled={!form.amount} className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-medium rounded-xl py-3 transition shadow-lg shadow-emerald-500/20">
@@ -159,11 +198,15 @@ const TransactionsView = () => {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center mb-6">
-        <ListHeader title="Transações" icon={List} onAdd={() => { setEditingItem(null); setModalType('transaction'); }} />
-        <button onClick={handleExportCSV} className="hidden md:flex bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-xl items-center gap-2 border border-zinc-700 transition">
-          <FileText size={18}/> Exportar CSV
-        </button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="flex-1 w-full md:w-auto">
+          <ListHeader title="Transações" icon={List} onAdd={() => { setEditingItem(null); setModalType('transaction'); }} />
+        </div>
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+          <button onClick={handleExportCSV} className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-xl flex items-center gap-2 border border-zinc-700 transition text-sm">
+            <FileText size={18}/> Exportar CSV
+          </button>
+        </div>
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-lg overflow-hidden flex flex-col mb-8">
