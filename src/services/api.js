@@ -50,39 +50,28 @@ const toSnake = (obj) => {
   if (!obj) return null;
   const { paymentMethod, ...rest } = obj;
   
-  const mapped = { ...rest };
+  const mapped = {
+    ...rest,
+    category_id: obj.categoryId,
+    family_member_id: obj.familyId,
+    is_paid: obj.isPaid,
+    is_recurring: obj.isRecurring,
+    group_id: obj.groupId,
+    date: formatDate(obj.date),
+    destination_wallet_id: obj.destinationAccountId,
+    limit_amount: obj.limit,
+    closing_day: obj.closingDay,
+    due_day: obj.dueDay,
+    wallet_id: paymentMethod?.type === 'account' ? paymentMethod.id : null,
+    card_id: paymentMethod?.type === 'card' ? paymentMethod.id : null
+  };
 
-  // Mapeamento condicional: Só adiciona a chave snake_case se a camelCase existir
-  if (obj.categoryId !== undefined) mapped.category_id = obj.categoryId;
-  if (obj.familyId !== undefined) mapped.family_member_id = obj.familyId;
-  if (obj.isPaid !== undefined) mapped.is_paid = obj.isPaid;
-  if (obj.isRecurring !== undefined) mapped.is_recurring = obj.isRecurring;
-  if (obj.groupId !== undefined) mapped.group_id = obj.groupId;
-  if (obj.date !== undefined) mapped.date = formatDate(obj.date);
-  if (obj.destinationAccountId !== undefined) mapped.destination_wallet_id = obj.destinationAccountId;
-  if (obj.limit !== undefined) mapped.limit_amount = obj.limit;
-  if (obj.closingDay !== undefined) mapped.closing_day = obj.closingDay;
-  if (obj.dueDay !== undefined) mapped.due_day = obj.dueDay;
-  
-  // Mapeamento de pagamento (Transactions e Cards)
-  if (paymentMethod) {
-    mapped.wallet_id = paymentMethod.type === 'account' ? paymentMethod.id : null;
-    mapped.card_id = paymentMethod.type === 'card' ? paymentMethod.id : null;
-  }
-
-  // LIMPEZA: Remove as chaves camelCase originais para não dar erro de coluna inexistente no Supabase
+  // Remove campos camelCase originais
   const camelKeys = [
     'categoryId', 'familyId', 'isPaid', 'isRecurring', 'groupId', 
     'destinationAccountId', 'limit', 'closingDay', 'dueDay', 'paymentMethod'
   ];
   camelKeys.forEach(key => delete mapped[key]);
-
-  // HIGIENIZAÇÃO (Postgres UUID Compatibility): Converte "" em null
-  Object.keys(mapped).forEach(key => {
-    if (mapped[key] === "") {
-      mapped[key] = null;
-    }
-  });
 
   return mapped;
 };
@@ -105,13 +94,15 @@ const sanitizePayload = (tableName, data) => {
   const sanitized = {};
   
   allowed.forEach(key => {
+    // Somente envia se a chave existir e não for undefined (para evitar Erro 400 no PostgREST)
     if (data[key] !== undefined) {
-      sanitized[key] = data[key];
+      sanitized[key] = data[key] === "" ? null : data[key];
     }
   });
 
   return sanitized;
 };
+
 
 // --- HELPER DE EXECUÇÃO ---
 
