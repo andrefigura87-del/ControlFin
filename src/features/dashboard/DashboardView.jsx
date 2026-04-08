@@ -87,6 +87,8 @@ const DashboardView = ({ onEditAccount, onDeleteAccount }) => {
                 card={c} 
                 variant="compact"
                 used={c.used}
+                invoice={c.currentInvoice}
+                availableLimit={c.availableLimit}
                 formatMoney={formatMoney}
               />
             ))}

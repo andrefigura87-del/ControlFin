@@ -188,7 +188,18 @@ function FinanceManager() {
              <div>
                 <ListHeader title="Cartões de Crédito" icon={CardIcon} onAdd={() => { setEditingItem(null); setModalType('card'); }} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {metrics.enrichedCards.map(c => <CreditCard key={c.id} card={c} variant="full" used={c.used} formatMoney={formatMoney} onEdit={(i)=>{setEditingItem(i); setModalType('card');}} onDelete={(id,t)=>{setDeleteContext({id,collection:'cards',title:t}); setModalType('delete');}} />)}
+                  {metrics.enrichedCards.map(c => (
+                    <CreditCard 
+                      key={c.id} 
+                      card={c} 
+                      variant="full" 
+                      invoice={c.currentInvoice} 
+                      availableLimit={c.availableLimit} 
+                      formatMoney={formatMoney} 
+                      onEdit={(i)=>{setEditingItem(i); setModalType('card');}} 
+                      onDelete={(id,t)=>{setDeleteContext({id,collection:'cards',title:t}); setModalType('delete');}} 
+                    />
+                  ))}
                 </div>
              </div>
           )}

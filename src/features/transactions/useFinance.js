@@ -74,10 +74,22 @@ export function useFinance() {
 
     // Cálculo de gastos e limite de cartões (Enriquecimento)
     const enrichedCards = data.cards.map(c => {
-      const used = data.transactions
-        .filter(t => t.paymentMethod?.type === 'card' && t.paymentMethod?.id === c.id && t.type === 'Despesa')
+      const cardTransactions = data.transactions.filter(t => t.paymentMethod?.type === 'card' && t.paymentMethod?.id === c.id && t.type === 'Despesa');
+      
+      // Fatura Atual: Somente o que pertence ao mês selecionado
+      const currentInvoice = cardTransactions
+        .filter(t => {
+          const d = new Date(t.date + 'T00:00:00');
+          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        })
         .reduce((sum, t) => sum + t.amount, 0);
-      return { ...c, used, availableLimit: (c.limit || 0) - used };
+
+      // Limite Comprometido: Soma de TODAS as despesas não pagas (incluindo futuras)
+      const totalUsedLimit = cardTransactions
+        .filter(t => t.isPaid === false)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      return { ...c, currentInvoice, totalUsedLimit, availableLimit: (c.limit || 0) - totalUsedLimit };
     });
 
     const totalBalance = enrichedAccounts.reduce((acc, a) => acc + a.currentBalance, 0);

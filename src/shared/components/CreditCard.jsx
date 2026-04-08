@@ -1,7 +1,7 @@
 import React from 'react';
 import { CreditCard as CardIcon, Edit2, Trash2 } from 'lucide-react';
 
-const CreditCard = ({ card, used, todayISO, formatMoney, onEdit, onDelete, variant = 'full' }) => {
+const CreditCard = ({ card, invoice, availableLimit, formatMoney, onEdit, onDelete, variant = 'full' }) => {
   // Variant 'compact' para o Dashboard
   if (variant === 'compact') {
     return (
@@ -16,8 +16,8 @@ const CreditCard = ({ card, used, todayISO, formatMoney, onEdit, onDelete, varia
           </div>
         </div>
         <div className="text-right">
-          <div className="font-mono text-rose-400 text-sm">{formatMoney(used)} <span className="text-zinc-600 font-sans">usado</span></div>
-          <div className="font-mono text-emerald-400 text-xs">{formatMoney(card.limit - used)} <span className="text-zinc-600 font-sans">disp.</span></div>
+          <div className="font-mono text-rose-400 text-sm">{formatMoney(invoice)} <span className="text-zinc-600 font-sans text-[10px] uppercase">fatura</span></div>
+          <div className="font-mono text-emerald-400 text-xs">{formatMoney(availableLimit)} <span className="text-zinc-600 font-sans text-[10px] uppercase">disponível</span></div>
         </div>
       </div>
     );
@@ -30,7 +30,7 @@ const CreditCard = ({ card, used, todayISO, formatMoney, onEdit, onDelete, varia
       <div className="absolute bottom-0 left-0 w-full h-1 pointer-events-none" style={{backgroundColor: card.color}}></div>
       <div className="flex justify-between items-start mb-8 relative z-10">
         <div>
-          <div className="text-zinc-400 text-sm">{card.flag}</div>
+          <div className="text-zinc-400 text-sm font-sans uppercase tracking-widest">{card.flag}</div>
           <div className="font-medium text-xl text-white mt-1">{card.name}</div>
         </div>
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
@@ -43,15 +43,21 @@ const CreditCard = ({ card, used, todayISO, formatMoney, onEdit, onDelete, varia
         </div>
       </div>
       <div className="font-mono text-2xl tracking-widest text-zinc-300 mb-6 drop-shadow-sm">•••• •••• •••• {card.digits || '0000'}</div>
-      <div className="flex justify-between items-end">
-        <div>
-          <div className="text-xs text-zinc-500 mb-1">Fechamento / Venc.</div>
-          <div className="text-sm font-mono text-zinc-300">{card.closingDay} / {card.dueDay}</div>
+      
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/50">
+          <div className="text-[10px] text-zinc-500 uppercase mb-1">Fatura Atual</div>
+          <div className="text-lg font-mono text-rose-400">{formatMoney(invoice)}</div>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-zinc-500 mb-1">Disponível</div>
-          <div className="text-xl font-mono text-emerald-400">{formatMoney(card.limit - used)}</div>
+        <div className="p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/50">
+          <div className="text-[10px] text-zinc-500 uppercase mb-1">Disponível</div>
+          <div className="text-lg font-mono text-emerald-400">{formatMoney(availableLimit)}</div>
         </div>
+      </div>
+
+      <div className="flex justify-between items-center text-xs text-zinc-500 border-t border-zinc-800 pt-4">
+        <div>Fechamento / Vencimento</div>
+        <div className="font-mono text-zinc-300">{card.closingDay} / {card.dueDay}</div>
       </div>
     </div>
   );
