@@ -141,15 +141,26 @@ export function useFinance() {
     };
   }, [data, todayISO]);
 
+  // MAPEAMENTO DE MÉTODOS DA API (Prevenção de Reflection Error)
+  const apiMap = {
+    categories: { create: api.createCategory, update: api.updateCategory, delete: api.deleteCategory },
+    accounts: { create: api.createAccount, update: api.updateAccount, delete: api.deleteAccount },
+    cards: { create: api.createCard, update: api.updateCard, delete: api.deleteCard },
+    family: { create: api.createFamily, update: api.updateFamily, delete: api.deleteFamily },
+    transactions: { create: api.createTransaction, update: api.updateTransaction, delete: api.deleteTransaction }
+  };
+
   // OPERAÇÕES DE PERSISTÊNCIA
   const saveItem = async (item, collection) => {
     try {
       let result;
+      const methods = apiMap[collection];
+
       if (item.id) {
-        result = await api[`update${collection.charAt(0).toUpperCase() + collection.slice(1, -1)}`](item.id, item);
+        result = await methods.update(item.id, item);
       } else {
         const { id, ...payload } = item;
-        result = await api[`create${collection.charAt(0).toUpperCase() + collection.slice(1, -1)}`](payload);
+        result = await methods.create(payload);
       }
       
       setData(prev => {
@@ -169,7 +180,8 @@ export function useFinance() {
 
   const deleteItem = async (id, collection) => {
     try {
-      await api[`delete${collection.charAt(0).toUpperCase() + collection.slice(1, -1)}`](id);
+      const methods = apiMap[collection];
+      await methods.delete(id);
       setData(prev => ({
         ...prev,
         [collection]: prev[collection].filter(i => i.id !== id)
