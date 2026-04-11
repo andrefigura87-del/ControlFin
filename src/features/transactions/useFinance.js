@@ -76,18 +76,31 @@ export function useFinance() {
     const enrichedCards = data.cards.map(c => {
       const cardTransactions = data.transactions.filter(t => t.paymentMethod?.type === 'card' && t.paymentMethod?.id === c.id && t.type === 'Despesa');
       
-      // Fatura Atual: Somente o que pertence ao mês selecionado
+      // Fatura Atual: Considera o ciclo de fechamento real do cartão.
       const currentInvoice = cardTransactions
         .filter(t => {
-          const d = new Date(t.date + 'T00:00:00');
-          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+          const d = new Date(t.date + 'T12:00:00'); // Evitar erro de fuso
+          const cd = c.closingDay || 31; // Fallback para mês civil
+          
+          const tMonth = d.getMonth();
+          const tYear = d.getFullYear();
+          const tDate = d.getDate();
+          
+          let isCurrent = false;
+          if (tYear === currentYear) {
+            if (tMonth === currentMonth && tDate <= cd) isCurrent = true;
+            else if (tMonth === currentMonth - 1 && tDate > cd) isCurrent = true;
+          } else if (tYear === currentYear - 1 && currentMonth === 0) {
+            // Caso especial de virada de ano (Janeiro vs Dezembro)
+            if (tMonth === 11 && tDate > cd) isCurrent = true;
+          }
+          return isCurrent;
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // Limite Comprometido: Soma de TODAS as despesas não pagas (incluindo futuras)
-      const totalUsedLimit = cardTransactions
-        .filter(t => t.isPaid === false)
-        .reduce((sum, t) => sum + t.amount, 0);
+      // Limite Comprometido: Soma TODAS as despesas efetuadas no cartão
+      // (a compra abate do limite global na hora, ignoramos a flag isPaid temporária)
+      const totalUsedLimit = cardTransactions.reduce((sum, t) => sum + t.amount, 0);
 
       return { ...c, currentInvoice, totalUsedLimit, availableLimit: (c.limit || 0) - totalUsedLimit };
     });
