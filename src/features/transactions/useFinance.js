@@ -100,7 +100,7 @@ export function useFinance() {
 
       // Pagamentos efetuados para repor o limite do cartão.
       const cardPayments = data.transactions.filter(t => 
-        (t.type === 'Pagamento Fatura' && t.destinationAccountId === c.id) ||
+        (t.type === 'Transferência' && t.destinationAccountId === c.id) ||
         // Fallback: despesas marcadas na categoria Cartão de Crédito que não tinham destino explícito 
         (t.type === 'Despesa' && data.categories.find(cat => cat.id === t.categoryId)?.name.toLowerCase().includes('cartão') && !t.destinationAccountId)
       ).reduce((sum, t) => sum + t.amount, 0);

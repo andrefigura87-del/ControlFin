@@ -87,8 +87,8 @@ const TransactionsView = () => {
     return (
       <div className="space-y-4">
         <div className="flex gap-2 p-1 bg-zinc-950 rounded-lg overflow-x-auto whitespace-nowrap">
-          {['Despesa', 'Receita', 'Reserva', 'Pagamento Fatura'].map(t => (
-            <button key={t} onClick={()=>setForm({...form, type: t})} className={`flex-1 min-w-max px-3 py-1.5 rounded-md text-sm font-medium transition ${form.type === t ? 'bg-emerald-500/10 text-emerald-400' : 'text-zinc-500'}`}>{t}</button>
+          {['Despesa', 'Receita', 'Transferência', 'Reserva'].map(t => (
+            <button key={t} onClick={()=>setForm({...form, type: t})} className={`flex-1 min-w-max px-3 py-1.5 rounded-md text-sm font-medium transition ${form.type === t ? 'bg-emerald-500/10 text-emerald-400' : 'text-zinc-500'}`}>{t === 'Transferência' ? 'Pagamento Fatura' : t}</button>
           ))}
         </div>
         <div><label className="block text-xs text-zinc-400 mb-1">Descrição</label><input autoFocus value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
@@ -98,7 +98,7 @@ const TransactionsView = () => {
         </div>
         
         <div className="grid grid-cols-1 gap-4">
-          {(form.type === 'Reserva' || form.type === 'Pagamento Fatura') ? (
+          {(form.type === 'Reserva' || form.type === 'Transferência') ? (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Origem (Saída)</label>
@@ -112,17 +112,25 @@ const TransactionsView = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">Destino ({form.type === 'Pagamento Fatura' ? 'Cartão' : 'Conta'})</label>
+                <label className="block text-xs text-zinc-400 mb-1">Destino ({form.type === 'Transferência' ? 'Conta/Cartão' : 'Conta'})</label>
                 <select 
                   value={form.destinationAccountId} 
                   onChange={e => setForm({...form, destinationAccountId: e.target.value})}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
                 >
                   <option value="">Selecione o Destino</option>
-                  {form.type === 'Pagamento Fatura' 
-                    ? data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)
-                    : data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id}>🏦 {a.name}</option>)
-                  }
+                  {form.type === 'Transferência' ? (
+                    <>
+                      <optgroup label="Cartões (Pagamento Fatura)">
+                        {data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)}
+                      </optgroup>
+                      <optgroup label="Outras Contas">
+                        {data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id}>🏦 {a.name}</option>)}
+                      </optgroup>
+                    </>
+                  ) : (
+                    data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id}>🏦 {a.name}</option>)
+                  )}
                 </select>
               </div>
             </div>
@@ -199,7 +207,7 @@ const TransactionsView = () => {
         <div>
           <label className="block text-xs text-zinc-400 mb-1">Observações</label>
           <textarea 
-            value={form.notes} 
+            value={form.notes || ''} 
             onChange={e=>setForm({...form, notes: e.target.value})} 
             className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500 min-h-[80px]"
             placeholder="Detalhes adicionais..."
