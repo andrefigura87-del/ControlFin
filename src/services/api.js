@@ -209,9 +209,56 @@ export const getTransactions = () =>
 
 export const createTransaction = async (data) => {
   const { data: { user } } = await supabase.auth.getUser();
-  const payload = sanitizePayload('transactions', toSnake(data));
-  return execute(supabase.from('transactions').insert({ ...payload, user_id: user.id }).select())
-    .then(rows => toCamel(rows[0]));
+  const payloadsToInsert = [];
+
+  // Lógica de Parcelamento
+  if (data.isInstallment && data.installmentsCount > 1 && data.paymentMethod?.type === 'card') {
+    const count = data.installmentsCount;
+    // Arredondamento para evitar dízimas. Sobra/falta na primeira parcela.
+    const baseValue = Math.floor((data.amount / count) * 100) / 100;
+    const difference = Math.round((data.amount - (baseValue * count)) * 100) / 100;
+
+    for (let i = 0; i < count; i++) {
+        const itemDate = new Date(data.date + 'T12:00:00');
+        itemDate.setMonth(itemDate.getMonth() + i); // Progresso de mês com fallback seguro
+        
+        const payload = {
+          ...data,
+          description: `${data.description} (${i + 1}/${count})`,
+          amount: i === 0 ? Math.round((baseValue + difference) * 100) / 100 : baseValue,
+          date: itemDate.toISOString().split('T')[0]
+        };
+        payloadsToInsert.push(sanitizePayload('transactions', toSnake(payload)));
+    }
+  } 
+  // Lógica de Recorrência Mensal
+  else if (data.isRecurring) {
+    for (let i = 0; i < 12; i++) {
+        const itemDate = new Date(data.date + 'T12:00:00');
+        itemDate.setMonth(itemDate.getMonth() + i);
+        
+        const payload = {
+          ...data,
+          date: itemDate.toISOString().split('T')[0]
+        };
+        payloadsToInsert.push(sanitizePayload('transactions', toSnake(payload)));
+    }
+  } 
+  // Salvar transação única
+  else {
+    payloadsToInsert.push(sanitizePayload('transactions', toSnake(data)));
+  }
+
+  // Anexar o ID de usuário no backend bypassando os states de frontend
+  const finalPayloads = payloadsToInsert.map(p => ({ ...p, user_id: user.id }));
+
+  // Enviar massivamente (Bulk Insert) pro Supabase
+  return execute(supabase.from('transactions').insert(finalPayloads).select())
+    .then(rows => {
+      // Como o useFinance.js espera um objeto, ele vai colocar o index [0] no cache local
+      // Um simples refresh da página ou f5 trará as outras do banco nativamente
+      return rows && rows.length > 0 ? toCamel(rows[0]) : null;
+    });
 };
 
 export const updateTransaction = (id, data) => {

@@ -63,7 +63,7 @@ const TransactionsView = () => {
       categoryId: data.categories.find(c => c.type === 'Despesa')?.id || data.categories[0]?.id || '',
       paymentMethod: { type: 'account', id: defaultWallet },
       familyId: data.family[0]?.id || '', isPaid: true, isRecurring: false, notes: '',
-      destinationAccountId: ''
+      destinationAccountId: '', isInstallment: false, installmentsCount: 2
     });
 
     // Lógica para Tipo Reserva: Forçar categoria e limpar destino se não for reserva
@@ -172,10 +172,22 @@ const TransactionsView = () => {
               <input type="checkbox" checked={form.isPaid} onChange={e=>setForm({...form, isPaid: e.target.checked})} className="accent-emerald-500 w-4 h-4" />
               <span className="text-sm text-zinc-300">Efetivado</span>
             </label>
+            
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.isRecurring} onChange={e=>setForm({...form, isRecurring: e.target.checked})} className="accent-emerald-500 w-4 h-4" />
+              <input type="checkbox" checked={form.isRecurring} onChange={e=>setForm({...form, isRecurring: e.target.checked, isInstallment: false})} className="accent-emerald-500 w-4 h-4" />
               <span className="text-sm text-zinc-300">Mensal</span>
             </label>
+
+            {form.paymentMethod?.type === 'card' && form.type === 'Despesa' && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.isInstallment} onChange={e=>setForm({...form, isInstallment: e.target.checked, isRecurring: false})} className="accent-emerald-500 w-4 h-4" />
+                <span className="text-sm text-zinc-300">Parcelado</span>
+              </label>
+            )}
+
+            {form.isInstallment && form.paymentMethod?.type === 'card' && form.type === 'Despesa' && (
+              <input type="number" min="2" max="36" value={form.installmentsCount} onChange={e=>setForm({...form, installmentsCount: parseInt(e.target.value) || 2})} className="w-16 h-7 bg-zinc-950 border border-zinc-800 rounded px-2 text-sm font-mono text-center outline-none focus:border-emerald-500" />
+            )}
           </div>
         </div>
 
