@@ -79,7 +79,18 @@ const TransactionsView = () => {
     }, [form.type, data.categories]);
 
     const handleLocalSave = async () => {
-      await saveItem(form, 'transactions');
+      let finalForm = { ...form };
+      if (form.type === 'Transferência') {
+        const isCardPayment = data.cards.some(c => c.id === form.destinationAccountId);
+        if (isCardPayment) {
+          const ccCategory = data.categories.find(c => c.name.toLowerCase().includes('cartão') || c.name.toLowerCase().includes('cartao'));
+          if (ccCategory) finalForm.categoryId = ccCategory.id;
+        } else {
+          // A modelagem pode exigir uma sub-categoria default se for banco-a-banco
+          finalForm.categoryId = null; 
+        }
+      }
+      await saveItem(finalForm, 'transactions');
       setModalType(null);
       setEditingItem(null);
     };
@@ -296,8 +307,8 @@ const TransactionsView = () => {
                     <td className="px-4 py-3 text-zinc-400 text-xs flex items-center gap-2">
                       {t.paymentMethod?.type === 'card' ? <CreditCard size={14}/> : <Building size={14}/>} {source?.name}
                     </td>
-                    <td className={`px-4 py-3 font-mono text-right font-medium ${t.type === 'Receita' ? 'text-emerald-400' : t.type === 'Reserva' ? 'text-blue-400' : 'text-rose-400'}`}>
-                      {t.type === 'Despesa' ? '-' : '+'}{formatMoney(t.amount)}
+                    <td className={`px-4 py-3 font-mono text-right font-medium ${t.type === 'Receita' || (t.type === 'Transferência' && t.destinationAccountId === source?.id) ? 'text-emerald-400' : t.type === 'Reserva' ? 'text-blue-400' : 'text-rose-400'}`}>
+                      {t.type === 'Despesa' || (t.type === 'Transferência' && t.paymentMethod?.id === source?.id) ? '-' : '+'}{formatMoney(t.amount)}
                     </td>
                     <td className="px-4 py-3 text-center opacity-0 group-hover:opacity-100 transition">
                       <button onClick={()=>{setEditingItem(t); setModalType('transaction');}} className="p-1 text-zinc-500 hover:text-emerald-400 mx-1 transition"><Edit2 size={16}/></button>

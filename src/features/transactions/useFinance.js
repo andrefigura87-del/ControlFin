@@ -58,15 +58,15 @@ export function useFinance() {
     const enrichedAccounts = data.accounts.map(a => {
       const txs = data.transactions.filter(t => t.isPaid !== false);
       
-      // Entradas: Receitas na conta OU Reservas destinadas a esta conta
+      // Entradas: Receitas na conta OU Reservas/Transferências destinadas a esta conta
       const credits = txs.filter(t => 
         (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && t.type === 'Receita') ||
-        (t.type === 'Reserva' && t.destinationAccountId === a.id)
+        ((t.type === 'Reserva' || t.type === 'Transferência') && t.destinationAccountId === a.id)
       ).reduce((sum, t) => sum + t.amount, 0);
 
-      // Saídas: Despesas na conta OU Reservas saindo desta conta
+      // Saídas: Despesas na conta OU Reservas/Transferências saindo desta conta
       const debits = txs.filter(t => 
-        (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && (t.type === 'Despesa' || t.type === 'Reserva'))
+        (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && (t.type === 'Despesa' || t.type === 'Reserva' || t.type === 'Transferência'))
       ).reduce((sum, t) => sum + t.amount, 0);
 
       return { ...a, currentBalance: (a.balance || 0) + credits - debits };
