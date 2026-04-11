@@ -55,6 +55,19 @@ const CreditCard = ({ card, invoice, availableLimit, formatMoney, onEdit, onDele
         </div>
       </div>
 
+      <div className="mb-4">
+        <div className="flex justify-between text-[10px] text-zinc-500 uppercase mb-1">
+          <span>Progresso do Limite</span>
+          <span>{((card.limit ? (card.limit - availableLimit) / card.limit : 0) * 100).toFixed(0)}%</span>
+        </div>
+        <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-emerald-500 to-rose-500" 
+            style={{width: `${Math.min(100, Math.max(0, (card.limit ? (card.limit - availableLimit) / card.limit : 0) * 100))}%`}}
+          ></div>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center text-xs text-zinc-500 border-t border-zinc-800 pt-4">
         <div>Fechamento / Vencimento</div>
         <div className="font-mono text-zinc-300">{card.closingDay} / {card.dueDay}</div>

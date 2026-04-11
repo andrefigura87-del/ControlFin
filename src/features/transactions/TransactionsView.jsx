@@ -18,6 +18,7 @@ const TransactionsView = () => {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterDateStart, setFilterDateStart] = useState('');
   const [filterDateEnd, setFilterDateEnd] = useState('');
+  const [filterSource, setFilterSource] = useState('');
   const [modalType, setModalType] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteContext, setDeleteContext] = useState(null);
@@ -26,8 +27,9 @@ const TransactionsView = () => {
     return data.transactions.filter(t => {
       const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCat = !filterCategory || t.categoryId === filterCategory;
+      const matchesSource = !filterSource || t.paymentMethod?.id === filterSource;
       const matchesDate = (!filterDateStart || t.date >= filterDateStart) && (!filterDateEnd || t.date <= filterDateEnd);
-      return matchesSearch && matchesCat && matchesDate;
+      return matchesSearch && matchesCat && matchesSource && matchesDate;
     }).sort((a,b)=>new Date(b.date) - new Date(a.date));
   };
 
@@ -84,9 +86,9 @@ const TransactionsView = () => {
 
     return (
       <div className="space-y-4">
-        <div className="flex gap-2 p-1 bg-zinc-950 rounded-lg">
-          {['Despesa', 'Receita', 'Reserva'].map(t => (
-            <button key={t} onClick={()=>setForm({...form, type: t})} className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${form.type === t ? 'bg-emerald-500/10 text-emerald-400' : 'text-zinc-500'}`}>{t}</button>
+        <div className="flex gap-2 p-1 bg-zinc-950 rounded-lg overflow-x-auto whitespace-nowrap">
+          {['Despesa', 'Receita', 'Reserva', 'Pagamento Fatura'].map(t => (
+            <button key={t} onClick={()=>setForm({...form, type: t})} className={`flex-1 min-w-max px-3 py-1.5 rounded-md text-sm font-medium transition ${form.type === t ? 'bg-emerald-500/10 text-emerald-400' : 'text-zinc-500'}`}>{t}</button>
           ))}
         </div>
         <div><label className="block text-xs text-zinc-400 mb-1">Descrição</label><input autoFocus value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
@@ -96,7 +98,7 @@ const TransactionsView = () => {
         </div>
         
         <div className="grid grid-cols-1 gap-4">
-          {form.type === 'Reserva' ? (
+          {(form.type === 'Reserva' || form.type === 'Pagamento Fatura') ? (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Origem (Saída)</label>
@@ -110,14 +112,17 @@ const TransactionsView = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">Destino (Entrada)</label>
+                <label className="block text-xs text-zinc-400 mb-1">Destino ({form.type === 'Pagamento Fatura' ? 'Cartão' : 'Conta'})</label>
                 <select 
                   value={form.destinationAccountId} 
                   onChange={e => setForm({...form, destinationAccountId: e.target.value})}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
                 >
                   <option value="">Selecione o Destino</option>
-                  {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
+                  {form.type === 'Pagamento Fatura' 
+                    ? data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)
+                    : data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id}>🏦 {a.name}</option>)
+                  }
                 </select>
               </div>
             </div>
@@ -232,12 +237,22 @@ const TransactionsView = () => {
             {data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
           </select>
 
+          <select value={filterSource} onChange={e=>setFilterSource(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500">
+            <option value="">Todas as Fontes</option>
+            <optgroup label="Contas">
+              {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
+            </optgroup>
+            <optgroup label="Cartões">
+              {data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)}
+            </optgroup>
+          </select>
+
           <div className="flex gap-2">
             <input type="date" value={filterDateStart} onChange={e=>setFilterDateStart(e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-2 text-xs text-white outline-none focus:border-emerald-500 [color-scheme:dark]" />
             <input type="date" value={filterDateEnd} onChange={e=>setFilterDateEnd(e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-2 text-xs text-white outline-none focus:border-emerald-500 [color-scheme:dark]" />
           </div>
 
-          <button onClick={()=>{setSearchTerm(''); setFilterCategory(''); setFilterDateStart(''); setFilterDateEnd('');}} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-400 transition">Limpar Filtros</button>
+          <button onClick={()=>{setSearchTerm(''); setFilterCategory(''); setFilterDateStart(''); setFilterDateEnd(''); setFilterSource('');}} className="col-span-1 md:col-span-full xl:col-span-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-400 transition mb-2">Limpar Filtros</button>
         </div>
 
         <div className="overflow-x-auto">

@@ -98,9 +98,15 @@ export function useFinance() {
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // Limite Comprometido: Soma TODAS as despesas efetuadas no cartão
-      // (a compra abate do limite global na hora, ignoramos a flag isPaid temporária)
-      const totalUsedLimit = cardTransactions.reduce((sum, t) => sum + t.amount, 0);
+      // Pagamentos efetuados para repor o limite do cartão.
+      const cardPayments = data.transactions.filter(t => 
+        (t.type === 'Pagamento Fatura' && t.destinationAccountId === c.id) ||
+        // Fallback: despesas marcadas na categoria Cartão de Crédito que não tinham destino explícito 
+        (t.type === 'Despesa' && data.categories.find(cat => cat.id === t.categoryId)?.name.toLowerCase().includes('cartão') && !t.destinationAccountId)
+      ).reduce((sum, t) => sum + t.amount, 0);
+
+      // Limite Comprometido Real de longo prazo: (Total Histórico Gasto) - (Total Histórico Pago)
+      const totalUsedLimit = cardTransactions.reduce((sum, t) => sum + t.amount, 0) - cardPayments;
 
       return { ...c, currentInvoice, totalUsedLimit, availableLimit: (c.limit || 0) - totalUsedLimit };
     });
