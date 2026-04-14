@@ -81,14 +81,10 @@ const TransactionsView = () => {
     const handleLocalSave = async () => {
       let finalForm = { ...form };
       if (form.type === 'Transferência') {
-        const isCardPayment = data.cards.some(c => c.id === form.destinationAccountId);
-        if (isCardPayment) {
-          const ccCategory = data.categories.find(c => c.name.toLowerCase().includes('cartão') || c.name.toLowerCase().includes('cartao'));
-          if (ccCategory) finalForm.categoryId = ccCategory.id;
-        } else {
-          // A modelagem pode exigir uma sub-categoria default se for banco-a-banco
-          finalForm.categoryId = null; 
-        }
+        finalForm.categoryId = null; // Transferências puras não tem categoria
+      } else if (form.type === 'Pagamento Fatura') {
+        const ccCategory = data.categories.find(c => c.name.toLowerCase().includes('cartão') || c.name.toLowerCase().includes('cartao'));
+        if (ccCategory) finalForm.categoryId = ccCategory.id;
       }
       await saveItem(finalForm, 'transactions');
       setModalType(null);
@@ -97,9 +93,25 @@ const TransactionsView = () => {
 
     return (
       <div className="space-y-4">
-        <div className="flex gap-2 p-1 bg-zinc-950 rounded-lg overflow-x-auto whitespace-nowrap">
-          {['Despesa', 'Receita', 'Transferência', 'Reserva'].map(t => (
-            <button key={t} onClick={()=>setForm({...form, type: t})} className={`flex-1 min-w-max px-3 py-1.5 rounded-md text-sm font-medium transition ${form.type === t ? 'bg-emerald-500/10 text-emerald-400' : 'text-zinc-500'}`}>{t === 'Transferência' ? 'Pagamento Fatura' : t}</button>
+        <div className="flex flex-wrap gap-1.5 p-1 bg-zinc-950/50 rounded-xl border border-zinc-900">
+          {[
+            { id: 'Despesa', label: 'Despesa', color: 'bg-rose-500/15 text-rose-400 border border-rose-500/20' },
+            { id: 'Receita', label: 'Receita', color: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' },
+            { id: 'Transferência', label: 'Transferência', color: 'bg-zinc-800 text-zinc-300 border border-zinc-700' },
+            { id: 'Pagamento Fatura', label: 'Pagar Fatura', color: 'bg-purple-500/15 text-purple-400 border border-purple-500/20' },
+            { id: 'Reserva', label: 'Reserva', color: 'bg-blue-500/15 text-blue-400 border border-blue-500/20' }
+          ].map(t => (
+            <button 
+              key={t.id} 
+              onClick={()=>setForm({...form, type: t.id})} 
+              className={`flex-1 min-w-[80px] sm:min-w-[100px] px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+                form.type === t.id 
+                  ? t.color + ' shadow-lg' 
+                  : 'bg-transparent text-zinc-500 border border-transparent hover:bg-zinc-900 hover:text-zinc-300'
+              }`}
+            >
+              {t.label}
+            </button>
           ))}
         </div>
         <div><label className="block text-xs text-zinc-400 mb-1">Descrição</label><input autoFocus value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
@@ -109,7 +121,7 @@ const TransactionsView = () => {
         </div>
         
         <div className="grid grid-cols-1 gap-4">
-          {(form.type === 'Reserva' || form.type === 'Transferência') ? (
+          {(form.type === 'Reserva' || form.type === 'Transferência' || form.type === 'Pagamento Fatura') ? (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Origem (Saída)</label>
@@ -123,22 +135,15 @@ const TransactionsView = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">Destino ({form.type === 'Transferência' ? 'Conta/Cartão' : 'Conta'})</label>
+                <label className="block text-xs text-zinc-400 mb-1">Destino ({form.type === 'Pagamento Fatura' ? 'Cartão' : 'Conta'})</label>
                 <select 
                   value={form.destinationAccountId} 
                   onChange={e => setForm({...form, destinationAccountId: e.target.value})}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
                 >
                   <option value="">Selecione o Destino</option>
-                  {form.type === 'Transferência' ? (
-                    <>
-                      <optgroup label="Cartões (Pagamento Fatura)">
-                        {data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)}
-                      </optgroup>
-                      <optgroup label="Outras Contas">
-                        {data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id}>🏦 {a.name}</option>)}
-                      </optgroup>
-                    </>
+                  {form.type === 'Pagamento Fatura' ? (
+                    data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)
                   ) : (
                     data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id}>🏦 {a.name}</option>)
                   )}
@@ -300,6 +305,7 @@ const TransactionsView = () => {
                         {t.description}
                         {!t.isPaid && <span className="text-[10px] px-1.5 py-0.5 rounded border border-yellow-500/30 text-yellow-400 bg-yellow-500/10 uppercase tracking-wider">Provisionado</span>}
                       </div>
+                      {t.notes && <div className="text-xs text-zinc-500 mt-1 max-w-[200px] truncate" title={t.notes}>{t.notes}</div>}
                     </td>
                     <td className="px-4 py-3">
                       {cat && <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-800 text-xs text-zinc-300"><span>{cat.icon}</span> {cat.name}</span>}
@@ -308,7 +314,7 @@ const TransactionsView = () => {
                       {t.paymentMethod?.type === 'card' ? <CreditCard size={14}/> : <Building size={14}/>} {source?.name}
                     </td>
                     <td className={`px-4 py-3 font-mono text-right font-medium ${t.type === 'Receita' || (t.type === 'Transferência' && t.destinationAccountId === source?.id) ? 'text-emerald-400' : t.type === 'Reserva' ? 'text-blue-400' : 'text-rose-400'}`}>
-                      {t.type === 'Despesa' || (t.type === 'Transferência' && t.paymentMethod?.id === source?.id) ? '-' : '+'}{formatMoney(t.amount)}
+                      {t.type === 'Despesa' || ((t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.paymentMethod?.id === source?.id) ? '-' : '+'}{formatMoney(t.amount)}
                     </td>
                     <td className="px-4 py-3 text-center opacity-0 group-hover:opacity-100 transition">
                       <button onClick={()=>{setEditingItem(t); setModalType('transaction');}} className="p-1 text-zinc-500 hover:text-emerald-400 mx-1 transition"><Edit2 size={16}/></button>

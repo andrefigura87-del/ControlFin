@@ -61,12 +61,12 @@ export function useFinance() {
       // Entradas: Receitas na conta OU Reservas/Transferências destinadas a esta conta
       const credits = txs.filter(t => 
         (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && t.type === 'Receita') ||
-        ((t.type === 'Reserva' || t.type === 'Transferência') && t.destinationAccountId === a.id)
+        ((t.type === 'Reserva' || t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.destinationAccountId === a.id)
       ).reduce((sum, t) => sum + t.amount, 0);
 
       // Saídas: Despesas na conta OU Reservas/Transferências saindo desta conta
       const debits = txs.filter(t => 
-        (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && (t.type === 'Despesa' || t.type === 'Reserva' || t.type === 'Transferência'))
+        (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && (t.type === 'Despesa' || t.type === 'Reserva' || t.type === 'Transferência' || t.type === 'Pagamento Fatura'))
       ).reduce((sum, t) => sum + t.amount, 0);
 
       return { ...a, currentBalance: (a.balance || 0) + credits - debits };
@@ -100,7 +100,7 @@ export function useFinance() {
 
       // Pagamentos efetuados para repor o limite do cartão.
       const cardPayments = data.transactions.filter(t => 
-        (t.type === 'Transferência' && t.destinationAccountId === c.id) ||
+        ((t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.destinationAccountId === c.id) ||
         // Fallback: despesas marcadas na categoria Cartão de Crédito que não tinham destino explícito 
         (t.type === 'Despesa' && data.categories.find(cat => cat.id === t.categoryId)?.name.toLowerCase().includes('cartão') && !t.destinationAccountId)
       ).reduce((sum, t) => sum + t.amount, 0);
@@ -115,10 +115,11 @@ export function useFinance() {
 
     // Métricas do Mês (Considerando Efetivado OU <= Hoje)
     const filterRule = (t) => t.isPaid !== false || t.date <= todayISO;
+    const isTransfOrPag = (t) => t.type === 'Transferência' || t.type === 'Pagamento Fatura';
     
-    const monthReceitas = monthTransactions.filter(t => t.type === 'Receita' && filterRule(t)).reduce((a, t) => a + t.amount, 0);
-    const monthDespesas = monthTransactions.filter(t => t.type === 'Despesa' && filterRule(t)).reduce((a, t) => a + t.amount, 0);
-    const monthReservas = monthTransactions.filter(t => t.type === 'Reserva' && filterRule(t)).reduce((a, t) => a + t.amount, 0);
+    const monthReceitas = monthTransactions.filter(t => t.type === 'Receita' && !isTransfOrPag(t) && filterRule(t)).reduce((a, t) => a + t.amount, 0);
+    const monthDespesas = monthTransactions.filter(t => t.type === 'Despesa' && !isTransfOrPag(t) && filterRule(t)).reduce((a, t) => a + t.amount, 0);
+    const monthReservas = monthTransactions.filter(t => t.type === 'Reserva' && !isTransfOrPag(t) && filterRule(t)).reduce((a, t) => a + t.amount, 0);
 
     // Despesas por Categoria
     const expensesByCategory = data.categories.filter(c => c.type === 'Despesa').map(c => {
