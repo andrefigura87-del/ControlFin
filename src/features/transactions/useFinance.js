@@ -76,8 +76,24 @@ export function useFinance() {
     const enrichedCards = data.cards.map(c => {
       const cardTransactions = data.transactions.filter(t => t.paymentMethod?.type === 'card' && t.paymentMethod?.id === c.id && t.type === 'Despesa');
       
-      // Fatura Atual: Considera o ciclo de fechamento real do cartão.
-      const currentInvoice = cardTransactions
+      // Pagamentos efetuados para repor o limite do cartão.
+      const cardPayments = data.transactions.filter(t => 
+        ((t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.destinationAccountId === c.id) ||
+        // Fallback: despesas marcadas na categoria Cartão de Crédito que não tinham destino explícito 
+        (t.type === 'Despesa' && data.categories.find(cat => cat.id === t.categoryId)?.name.toLowerCase().includes('cartão') && !t.destinationAccountId)
+      ).reduce((sum, t) => sum + t.amount, 0);
+
+      // Limite Comprometido Real de longo prazo: (Total Histórico Gasto) - (Total Histórico Pago)
+      const totalUsedLimit = cardTransactions
+        .filter(t => {
+          const isPastOrToday = t.date <= todayISO;
+          const isInstallment = t.description.includes('(') && t.description.includes('/');
+          return isPastOrToday || isInstallment;
+        })
+        .reduce((sum, t) => sum + t.amount, 0) - cardPayments;
+
+      // Fatura Atual Bruta: Considera o ciclo de fechamento real do cartão.
+      const grossCycleInvoice = cardTransactions
         .filter(t => {
           const d = new Date(t.date + 'T12:00:00'); // Evitar erro de fuso
           const cd = c.closingDay || 31; // Fallback para mês civil
@@ -98,21 +114,8 @@ export function useFinance() {
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // Pagamentos efetuados para repor o limite do cartão.
-      const cardPayments = data.transactions.filter(t => 
-        ((t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.destinationAccountId === c.id) ||
-        // Fallback: despesas marcadas na categoria Cartão de Crédito que não tinham destino explícito 
-        (t.type === 'Despesa' && data.categories.find(cat => cat.id === t.categoryId)?.name.toLowerCase().includes('cartão') && !t.destinationAccountId)
-      ).reduce((sum, t) => sum + t.amount, 0);
-
-      // Limite Comprometido Real de longo prazo: (Total Histórico Gasto) - (Total Histórico Pago)
-      const totalUsedLimit = cardTransactions
-        .filter(t => {
-          const isPastOrToday = t.date <= todayISO;
-          const isInstallment = t.description.includes('(') && t.description.includes('/');
-          return isPastOrToday || isInstallment;
-        })
-        .reduce((sum, t) => sum + t.amount, 0) - cardPayments;
+      // Nova Regra de Negócio: Fatura atual é um reflexo do saldo devedor. Nunca exibirá mais do que o limite histórico comprometido.
+      const currentInvoice = Math.max(0, Math.min(grossCycleInvoice, totalUsedLimit));
 
       return { ...c, currentInvoice, totalUsedLimit, availableLimit: (c.limit || 0) - totalUsedLimit };
     });
