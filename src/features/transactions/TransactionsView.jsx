@@ -196,7 +196,7 @@ const TransactionsView = () => {
               {data.family.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
             </select>
           </div>
-          <div className="flex items-center gap-4 mt-5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3 mt-5">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.isPaid} onChange={e=>setForm({...form, isPaid: e.target.checked})} className="accent-emerald-500 w-4 h-4" />
               <span className="text-sm text-zinc-300">Efetivado</span>
@@ -208,14 +208,15 @@ const TransactionsView = () => {
             </label>
 
             {form.paymentMethod?.type === 'card' && form.type === 'Despesa' && (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.isInstallment} onChange={e=>setForm({...form, isInstallment: e.target.checked, isRecurring: false})} className="accent-emerald-500 w-4 h-4" />
-                <span className="text-sm text-zinc-300">Parcelado</span>
-              </label>
-            )}
-
-            {form.isInstallment && form.paymentMethod?.type === 'card' && form.type === 'Despesa' && (
-              <input type="number" min="2" max="36" value={form.installmentsCount} onChange={e=>setForm({...form, installmentsCount: parseInt(e.target.value) || 2})} className="w-16 h-7 bg-zinc-950 border border-zinc-800 rounded px-2 text-sm font-mono text-center outline-none focus:border-emerald-500" />
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.isInstallment} onChange={e=>setForm({...form, isInstallment: e.target.checked, isRecurring: false})} className="accent-emerald-500 w-4 h-4" />
+                  <span className="text-sm text-zinc-300">Parcelado</span>
+                </label>
+                {form.isInstallment && (
+                  <input type="number" min="2" max="36" value={form.installmentsCount} onChange={e=>setForm({...form, installmentsCount: parseInt(e.target.value) || 2})} className="w-14 h-7 bg-zinc-950 border border-zinc-700 rounded px-1 text-xs font-mono text-center outline-none focus:border-emerald-500 transition-colors" />
+                )}
+              </div>
             )}
           </div>
         </div>

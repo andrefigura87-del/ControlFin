@@ -80,7 +80,7 @@ const toSnake = (obj) => {
 const sanitizePayload = (tableName, data) => {
   const whitelists = {
     categories: ['name', 'icon', 'color', 'type'],
-    wallets: ['name', 'balance', 'color'],
+    wallets: ['name', 'balance', 'color', 'type'],
     cards: ['name', 'limit_amount', 'closing_day', 'due_day', 'digits', 'color', 'flag'],
     family_members: ['name', 'relation'],
     transactions: [

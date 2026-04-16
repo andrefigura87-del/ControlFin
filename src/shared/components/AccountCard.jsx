@@ -21,7 +21,7 @@ const AccountCard = ({ account, balance, onEdit, onDelete, formatMoney }) => {
           </div>
           <div>
             <div className={`font-medium text-lg ${isBranded ? 'text-inherit' : 'text-white'}`}>{account.name}</div>
-            <div className={`text-xs ${isBranded ? 'text-inherit opacity-70' : 'text-zinc-500'}`}>{account.type}</div>
+            <div className={`text-xs ${isBranded ? 'text-inherit opacity-70' : 'text-zinc-500'}`}>{account.type || 'Corrente'}</div>
           </div>
         </div>
         <div className={`flex gap-1 opacity-0 group-hover:opacity-100 transition rounded-lg p-1 shadow ${isBranded ? 'bg-black/20 backdrop-blur-md' : 'bg-zinc-950 border border-zinc-800'}`}>
