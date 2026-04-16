@@ -92,30 +92,30 @@ export function useFinance() {
         })
         .reduce((sum, t) => sum + t.amount, 0) - cardPayments;
 
-      // Fatura Atual Bruta: Considera o ciclo de fechamento real do cartão.
-      const grossCycleInvoice = cardTransactions
+      // Nova Matemática da Fatura: Soma TUDO que foi gasto na história até a data de fechamento do ciclo atual
+      const historicalAndCurrentExpenses = cardTransactions
         .filter(t => {
           const d = new Date(t.date + 'T12:00:00'); // Evitar erro de fuso
-          const cd = c.closingDay || 31; // Fallback para mês civil
+          const cd = c.closingDay || 31; 
           
           const tMonth = d.getMonth();
           const tYear = d.getFullYear();
           const tDate = d.getDate();
           
-          let isCurrent = false;
-          if (tYear === currentYear) {
-            if (tMonth === currentMonth && tDate <= cd) isCurrent = true;
-            else if (tMonth === currentMonth - 1 && tDate > cd) isCurrent = true;
-          } else if (tYear === currentYear - 1 && currentMonth === 0) {
-            // Caso especial de virada de ano (Janeiro vs Dezembro)
-            if (tMonth === 11 && tDate > cd) isCurrent = true;
-          }
-          return isCurrent;
+          let isFutureCycle = false;
+          // Se for ano seguinte, é fatura futura
+          if (tYear > currentYear) isFutureCycle = true;
+          // Se for o mesmo ano e mês seguinte, é fatura futura
+          else if (tYear === currentYear && tMonth > currentMonth) isFutureCycle = true;
+          // Se for o mesmo mês/ano, mas a data já ultrapassou o fechamento deste mês, também cai na fatura futura
+          else if (tYear === currentYear && tMonth === currentMonth && tDate > cd) isFutureCycle = true;
+          
+          return !isFutureCycle;
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // Nova Regra de Negócio: Fatura atual é um reflexo do saldo devedor. Nunca exibirá mais do que o limite histórico comprometido.
-      const currentInvoice = Math.max(0, Math.min(grossCycleInvoice, totalUsedLimit));
+      // Fatura atual é: (Tudo que você já consumiu na história até este ciclo) - (Tudo que você já pagou na história inteira)
+      const currentInvoice = Math.max(0, historicalAndCurrentExpenses - cardPayments);
 
       return { ...c, currentInvoice, totalUsedLimit, availableLimit: (c.limit || 0) - totalUsedLimit };
     });
