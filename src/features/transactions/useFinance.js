@@ -106,7 +106,13 @@ export function useFinance() {
       ).reduce((sum, t) => sum + t.amount, 0);
 
       // Limite Comprometido Real de longo prazo: (Total Histórico Gasto) - (Total Histórico Pago)
-      const totalUsedLimit = cardTransactions.reduce((sum, t) => sum + t.amount, 0) - cardPayments;
+      const totalUsedLimit = cardTransactions
+        .filter(t => {
+          const isPastOrToday = t.date <= todayISO;
+          const isInstallment = t.description.includes('(') && t.description.includes('/');
+          return isPastOrToday || isInstallment;
+        })
+        .reduce((sum, t) => sum + t.amount, 0) - cardPayments;
 
       return { ...c, currentInvoice, totalUsedLimit, availableLimit: (c.limit || 0) - totalUsedLimit };
     });
