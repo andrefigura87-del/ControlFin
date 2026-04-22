@@ -1,17 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
-  List, Search, Edit2, Trash2, CreditCard, Building, Activity, FileText 
+  List, Search, Edit2, Trash2, CreditCard, Building, Activity, FileText, Upload, HelpCircle
 } from 'lucide-react';
 import { NumericFormat } from 'react-number-format';
 import { useFinance } from './useFinance';
 import ListHeader from '../../shared/components/ListHeader';
 import Modal from '../../shared/components/Modal';
+import { exportTransactionsToCSV, downloadCSV } from '../../lib/exportUtils';
+import ImportModal from './ImportModal';
+import { supabase } from '../../lib/supabase';
+import CategoryDropdown from '../../shared/components/CategoryDropdown';
+import VolumetricIcon from '../../shared/components/VolumetricIcon';
+import { DEFAULT_CATEGORIES } from '../../shared/constants/categories';
 
+// Helper para renderizar ícone de categoria com fallback defensivo
+const renderCategoryIcon = (category) => {
+  if (!category || !category.icon) {
+    return <VolumetricIcon icon={AlertTriangle} color="danger" size="sm" />;
+  }
+  return <VolumetricIcon icon={category.icon} color={category.color || 'primary'} size="sm" />;
+};
+
+// Componente principal
 const TransactionsView = () => {
   const { data, metrics, utils, operations } = useFinance();
   const { formatMoney, formatDate } = utils;
   const { saveItem, deleteItem } = operations;
   const { todayISO } = metrics;
+
+  // Categorias enriquecidas com ícones e cores
+  const enrichedCategories = data.categories.map(cat => {
+    const key = cat.name?.toLowerCase().replace(/\s+/g, '_');
+    const config = DEFAULT_CATEGORIES[key] || DEFAULT_CATEGORIES[cat.name?.toLowerCase()];
+    return {
+      ...cat,
+      icon: config?.icon || HelpCircle,
+      color: config?.color || 'secondary'
+    };
+  });
 
   // ESTADOS LOCAIS PARA FILTROS E MODAIS
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +48,8 @@ const TransactionsView = () => {
   const [modalType, setModalType] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteContext, setDeleteContext] = useState(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [existingExternalIds, setExistingExternalIds] = useState([]);
 
   const getFilteredTransactions = () => {
     return data.transactions.filter(t => {
@@ -35,27 +63,102 @@ const TransactionsView = () => {
 
   const txs = getFilteredTransactions();
 
+
+  // Funções para Importação OFX
+  const fetchExistingExternalIds = async () => {
+    const { data: txs } = await supabase
+      .from("transactions")
+      .select("external_id")
+      .not("external_id", "is", null);
+    return txs?.map(t => t.external_id).filter(Boolean) || [];
+  };
+
+  const handleOpenImport = async () => {
+    const ids = await fetchExistingExternalIds();
+    setExistingExternalIds(ids);
+    setImportModalOpen(true);
+  };
+
+const handleImportTransactions = async (transactionsToImport, options = {}) => {
+    const { replaceExisting = false } = options;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+
+    if (!userId) throw new Error("Usuário não autenticado");
+
+    // Obter wallet_id das transações para o replace
+    const walletId = transactionsToImport[0]?.wallet_id;
+    const hasWalletId = walletId && transactionsToImport.every(tx => tx.wallet_id === walletId);
+
+    // WIPE & REPLACE: Se ativado, primeiro excluir todas as transações da carteira
+    if (replaceExisting && hasWalletId) {
+      try {
+        const { error: deleteError } = await supabase
+          .from("transactions")
+          .delete()
+          .eq('wallet_id', walletId)
+          .eq('user_id', userId);
+
+        if (deleteError) {
+          console.error('Erro ao excluir transações:', deleteError);
+          throw new Error('Falha ao limpar transações anteriores. Importação cancelada.');
+        }
+      } catch (deleteErr) {
+        console.error('Delete falhou:', deleteErr);
+        throw new Error('Não foi possível limpar as transações anteriores. Tente novamente.');
+      }
+    }
+
+    // Filtrar duplicados (só se não for replace)
+    let validTxs = transactionsToImport;
+    if (!replaceExisting) {
+      validTxs = transactionsToImport.filter(tx =>
+        !existingExternalIds.includes(tx.external_id)
+      );
+    }
+
+    if (validTxs.length === 0 && !replaceExisting) {
+      throw new Error("Todas as transações já foram importadas");
+    }
+
+    // Preparar dados para inserção
+    const records = validTxs.map(tx => ({
+      user_id: userId,
+      description: tx.description,
+      amount: tx.amount,
+      type: tx.type,
+      date: tx.date,
+      category_id: tx.category_id,
+      wallet_id: tx.wallet_id,
+      external_id: (tx.external_id && tx.external_id !== 'null') ? tx.external_id : null,
+      notes: tx.notes || null,
+      is_paid: true
+    }));
+
+
+    // UPSERT no banco (previne duplicatas via constraint UNIQUE)
+    const { data, error } = await supabase
+      .from("transactions")
+      .upsert(records, { onConflict: 'external_id', ignoreDuplicates: true })
+      .select();
+
+    if (error) throw error;
+
+
+    // Recarregar dados
+    await operations.refresh();
+
+    return {
+      imported: validTxs.length,
+      replaced: replaceExisting
+    };
+  };
+
   const handleExportCSV = () => {
-    const headers = ['Data', 'Descricao', 'Categoria', 'Fonte', 'Valor', 'Status'];
-    const rows = txs.map(t => {
-      const cat = data.categories.find(c => c.id === t.categoryId);
-      const source = t.paymentMethod?.type === 'account' ? data.accounts.find(a=>a.id===t.paymentMethod.id) : data.cards.find(c=>c.id===t.paymentMethod.id);
-      const amount = t.type === 'Despesa' ? -t.amount : t.amount;
-      return [
-        t.date, 
-        t.description.replace(/,/g, ''), 
-        cat?.name || '', 
-        source?.name || '', 
-        amount.toFixed(2), 
-        t.isPaid ? 'Efetivado' : 'Provisionado'
-      ].join(',');
-    });
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `extrato_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    const csvContent = exportTransactionsToCSV(txs, data.categories, data.accounts, data.cards);
+    const filename = `extrato_${new Date().toISOString().split('T')[0]}.csv`;
+    downloadCSV(csvContent, filename);
   };
 
   const FormTransaction = ({ item }) => {
@@ -159,7 +262,7 @@ const TransactionsView = () => {
                   onChange={e=>setForm({...form, categoryId: e.target.value})} 
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
                 >
-                  {data.categories.filter(c => c.type === form.type || form.type === 'Transferência').map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  {data.categories.filter(c => c.type === form.type || form.type === 'Transferência').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
@@ -245,6 +348,9 @@ const TransactionsView = () => {
         icon={List} 
         onAdd={() => { setEditingItem(null); setModalType('transaction'); }}
       >
+        <button onClick={handleOpenImport} className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-xl flex items-center gap-2 border border-zinc-700 transition text-sm">
+          <Upload size={18}/> Importar OFX
+        </button>
         <button onClick={handleExportCSV} className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-xl flex items-center gap-2 border border-zinc-700 transition text-sm">
           <FileText size={18}/> Exportar CSV
         </button>
@@ -259,7 +365,7 @@ const TransactionsView = () => {
           
           <select value={filterCategory} onChange={e=>setFilterCategory(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500">
             <option value="">Todas Categorias</option>
-            {data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+            {data.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
 
           <select value={filterSource} onChange={e=>setFilterSource(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500">
@@ -334,6 +440,16 @@ const TransactionsView = () => {
           <FormTransaction item={editingItem} />
         </Modal>
       )}
+
+
+      <ImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        categories={data.categories}
+        wallets={data.accounts}
+        existingExternalIds={existingExternalIds}
+        onImport={handleImportTransactions}
+      />
 
       {modalType === 'delete' && (
         <Modal title="Confirmar Exclusão" onClose={() => setModalType(null)}>

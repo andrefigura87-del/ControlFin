@@ -1,13 +1,42 @@
 import React, { useState } from 'react';
-import * as LucideIcons from 'lucide-react';
-const {
-  Home, Tags, Wallet, CreditCard: CardIcon, Users, List, AlertTriangle, Activity, Check, LogOut
-} = LucideIcons;
+import { 
+  Home, Tags, Wallet, CreditCard as CardIcon, Users, List, AlertTriangle, 
+  Activity, Check, LogOut, HelpCircle, Edit2, X
+} from 'lucide-react';
 
 import { AuthProvider, useAuth } from './core/AuthContext';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 import { useFinance } from './features/transactions/useFinance';
+import VolumetricIcon from './shared/components/VolumetricIcon';
 import DynamicIcon from './shared/components/DynamicIcon';
+import { getIconOptions, COLOR_OPTIONS, ICON_MAP, getIconByKey } from './shared/constants/iconMap';
+import { getCategoryByName } from './shared/constants/categories';
+
+// Helper para resolver ícone da categoria (suporta ambos os formatos)
+const resolveCategoryIcon = (c) => {
+  if (!c) return HelpCircle;
+  // Tenta pelo iconMap (novo formato: chave string)
+  if (c.icon && typeof c.icon === 'string') {
+    const fromMap = ICON_MAP[c.icon];
+    if (fromMap) return fromMap;
+  }
+  // Tenta pelo DEFAULT_CATEGORIES (formato antigo: componente)
+  if (c.icon && typeof c.icon === 'function') {
+    return c.icon;
+  }
+  // Tenta pelo nome da categoria
+  const config = getCategoryByName(c.name);
+  return config?.icon || HelpCircle;
+};
+
+// Helper para cor da categoria
+const inferCategoryColor = (c) => {
+  if (!c) return 'secondary';
+  if (c.color && typeof c.color === 'string') return c.color;
+  const config = getCategoryByName(c.name);
+  return config?.color || 'secondary';
+};
+
 import Modal from './shared/components/Modal';
 import ListHeader from './shared/components/ListHeader';
 import AccountCard from './shared/components/AccountCard';
@@ -65,8 +94,9 @@ function FinanceManager() {
   );
 
   const FormCategory = ({ item }) => {
-    const [form, setForm] = useState(item || { name: '', type: 'Despesa', icon: '💰', color: '#6366f1' });
-    const emojiList = ['📊','📈','💵','🏦','💰','📥','💸','📤','💳','🍕','🏠','💡','🚗','⛽','🏥','🎓','📚','📺','🎧','🎯','🐷'];
+    const iconOptions = getIconOptions();
+    const [form, setForm] = useState(item ? { ...item, icon: item.icon || 'dollar' } : { name: '', type: 'Despesa', icon: 'dollar', color: 'primary' });
+    
     return (
       <div className="space-y-4">
         <div><label className="block text-xs text-zinc-400 mb-1">Nome</label><input autoFocus value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
@@ -76,11 +106,31 @@ function FinanceManager() {
               <option>Despesa</option><option>Receita</option><option>Reserva</option>
             </select>
           </div>
-          <div><label className="block text-xs text-zinc-400 mb-1">Cor</label><input type="color" value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="w-full h-10 rounded border-0 bg-transparent cursor-pointer" /></div>
+          <div><label className="block text-xs text-zinc-400 mb-1">Cor</label>
+            <select value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500">
+              {COLOR_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap max-h-40 overflow-y-auto p-2 bg-zinc-950 rounded-lg border border-zinc-800 text-2xl">
-          {emojiList.map(i => <button key={i} onClick={()=>setForm({...form, icon:i})} className={`w-10 h-10 rounded-lg flex items-center justify-center transition ${form.icon===i ? 'bg-zinc-800 ring-2 ring-emerald-500' : 'hover:bg-zinc-800'}`}>{i}</button>)}
+        
+        {/* Grade de Ícones Volumétricos */}
+        <div><label className="block text-xs text-zinc-400 mb-1">Ícone</label>
+          <div className="grid grid-cols-6 gap-2 p-2 bg-zinc-950 rounded-lg border border-zinc-800 max-h-32 overflow-y-auto">
+            {iconOptions.map(({ key, Icon }) => (
+              <button 
+                key={key} 
+                type="button"
+                onClick={()=>setForm({...form, icon: key})}
+                className={`w-10 h-10 rounded-lg flex items-center justify-center transition ${
+                  form.icon === key ? 'ring-2 ring-emerald-500 bg-zinc-800' : 'hover:bg-zinc-800'
+                }`}
+              >
+                <VolumetricIcon Icon={Icon} color={form.color || 'primary'} size="sm" />
+              </button>
+            ))}
+          </div>
         </div>
+        
         <button onClick={()=>handleSave(form, 'categories')} className="w-full bg-emerald-500 text-white rounded-lg py-2 mt-4 font-medium hover:bg-emerald-600 transition">Salvar Categoria</button>
       </div>
     );
@@ -211,18 +261,23 @@ function FinanceManager() {
              </div>
           )}
           {activeTab === 'categories' && (
-             <div>
-                <ListHeader title="Categorias" icon={Tags} onAdd={() => { setEditingItem(null); setModalType('category'); }} />
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {data.categories.map(c => (
-                    <div key={c.id} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center group">
-                      <div className="flex items-center gap-2"><span>{c.icon}</span> <span className="text-sm">{c.name}</span></div>
-                      <button onClick={()=>{setEditingItem(c); setModalType('category');}} className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-emerald-400"><LucideIcons.Edit2 size={14}/></button>
-                    </div>
-                  ))}
-                </div>
-             </div>
-          )}
+              <div>
+                 <ListHeader title="Categorias" icon={Tags} onAdd={() => { setEditingItem(null); setModalType('category'); }} />
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+{data.categories.map(c => (
+                      <div key={c.id} className="bg-zinc-900 p-3 rounded-xl border border-zinc-800 flex flex-col items-center gap-2 group hover:border-emerald-500/30 transition-colors">
+                        <VolumetricIcon 
+                          icon={resolveCategoryIcon(c)} 
+                          color={inferCategoryColor(c)} 
+                          size="md" 
+                        />
+                        <span className="text-xs text-zinc-300 text-center">{c.name}</span>
+                        <button onClick={()=>{setEditingItem(c); setModalType('category');}} className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-emerald-400"><Edit2 size={14}/></button>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+           )}
           {activeTab === 'family' && (
              <FamilyView 
                 onAdd={() => { setEditingItem(null); setModalType('family'); }}

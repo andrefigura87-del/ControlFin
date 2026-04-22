@@ -1,11 +1,13 @@
 import React from 'react';
 import { 
-  Wallet, TrendingUp, TrendingDown, DollarSign, Activity, CreditCard as CardIcon 
+  Wallet, TrendingUp, TrendingDown, DollarSign, Activity, CreditCard as CardIcon, HelpCircle 
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFinance } from '../transactions/useFinance';
 import AccountCard from '../../shared/components/AccountCard';
 import CreditCard from '../../shared/components/CreditCard';
+import VolumetricIcon from '../../shared/components/VolumetricIcon';
+import { getCategoryByName } from '../../shared/constants/categories';
 
 const DashboardView = ({ onEditAccount, onDeleteAccount }) => {
   const { data, metrics, utils } = useFinance();
@@ -103,10 +105,19 @@ const DashboardView = ({ onEditAccount, onDeleteAccount }) => {
           <div className="flex-1 space-y-4">
             {expensesByCategory.map(c => (
               <div key={c.id} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <div className="flex items-center gap-2 text-zinc-300"><span>{c.icon}</span> {c.name}</div>
-                  <div className="font-mono text-zinc-400">{formatMoney(c.total)}</div>
-                </div>
+                {(() => {
+                  const config = getCategoryByName(c.name);
+                  const IconComp = config?.icon || HelpCircle;
+                  return (
+                    <div className="flex justify-between text-sm">
+                      <div className="flex items-center gap-2 text-zinc-300">
+                        <VolumetricIcon icon={IconComp} color={config?.color || 'secondary'} size="sm" />
+                        <span>{c.name}</span>
+                      </div>
+                      <div className="font-mono text-zinc-400">{formatMoney(c.total)}</div>
+                    </div>
+                  );
+                })()}
                 <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
                   <div 
                     className="h-full rounded-full transition-all duration-1000" 

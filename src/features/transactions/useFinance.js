@@ -233,12 +233,31 @@ export function useFinance() {
     }
   };
 
+  // Função para recarregar dados (usada após importação OFX)
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const [categories, accounts, cards, family, transactions] = await Promise.all([
+        api.getCategories(),
+        api.getAccounts(),
+        api.getCards(),
+        api.getFamily(),
+        api.getTransactions(),
+      ]);
+      setData({ categories, accounts, cards, family, transactions });
+    } catch (err) {
+      console.error("Erro ao recarregar dados", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     data,
     setData,
     metrics,
     loading,
     utils: { formatMoney, formatDate },
-    operations: { saveItem, deleteItem, batchUpdate: api.batchUpdateTransactions }
+    operations: { saveItem, deleteItem, batchUpdate: api.batchUpdateTransactions, refresh }
   };
 }

@@ -1,0 +1,21 @@
+{
+  "name": "Santander",
+  "country": "BR",
+  "format": "OFX",
+  "fields": {
+    "dateField": "DTPOSTED",
+    "amountField": "TRNAMT",
+    "descriptionField": "NAME",
+    "fitidField": "FITID"
+  },
+  "dateFormat": "YYYYMMDD",
+  "signMapping": {
+    "positive": "CREDIT",
+    "negative": "DEBIT"
+  },
+  "keywords": {
+    "expense": ["debito", "pagamento", "compra", "tarifa", "saque"],
+    "income": ["deposito", "credito", "salario", "transferencia recebida"],
+    "transfer": ["transferencia", "pix env", "pix rec"]
+  }
+}
