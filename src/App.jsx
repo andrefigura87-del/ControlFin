@@ -65,27 +65,109 @@ function FinanceManager() {
   );
 
   const FormCategory = ({ item }) => {
-    const [form, setForm] = useState(item || { name: '', type: 'Despesa', icon: '💰', color: '#6366f1' });
-    const emojiList = ['📊','📈','💵','🏦','💰','📥','💸','📤','💳','🍕','🏠','💡','🚗','⛽','🏥','🎓','📚','📺','🎧','🎯','🐷'];
+    const COLOR_SWATCHES = [
+      { id: 'slate', bg: 'bg-slate-500', ring: 'focus:ring-slate-500 ring-slate-500' },
+      { id: 'zinc', bg: 'bg-zinc-500', ring: 'focus:ring-zinc-500 ring-zinc-500' },
+      { id: 'red', bg: 'bg-red-500', ring: 'focus:ring-red-500 ring-red-500' },
+      { id: 'orange', bg: 'bg-orange-500', ring: 'focus:ring-orange-500 ring-orange-500' },
+      { id: 'amber', bg: 'bg-amber-500', ring: 'focus:ring-amber-500 ring-amber-500' },
+      { id: 'emerald', bg: 'bg-emerald-500', ring: 'focus:ring-emerald-500 ring-emerald-500' },
+      { id: 'teal', bg: 'bg-teal-500', ring: 'focus:ring-teal-500 ring-teal-500' },
+      { id: 'cyan', bg: 'bg-cyan-500', ring: 'focus:ring-cyan-500 ring-cyan-500' },
+      { id: 'blue', bg: 'bg-blue-500', ring: 'focus:ring-blue-500 ring-blue-500' },
+      { id: 'indigo', bg: 'bg-indigo-500', ring: 'focus:ring-indigo-500 ring-indigo-500' },
+      { id: 'violet', bg: 'bg-violet-500', ring: 'focus:ring-violet-500 ring-violet-500' },
+      { id: 'purple', bg: 'bg-purple-500', ring: 'focus:ring-purple-500 ring-purple-500' },
+      { id: 'pink', bg: 'bg-pink-500', ring: 'focus:ring-pink-500 ring-pink-500' }
+    ];
+    
+    const emojiGroups = {
+      Receita: ['salario', 'reembolso', 'investimentos', '💰', '💵', '📥', '📈'],
+      Despesa: ['alimentacao', 'transporte', 'moradia', 'saude', 'mercado', 'educacao', 'lazer', 'vestuario', 'pets', 'viagens', 'academia', 'emprestimo', 'eletrodomesticos', 'internet_telefone', 'assinaturas', '🍔', '🚗', '💊', '💸', '📤'],
+      Reserva: ['investimentos', 'cartao_credito', '🏦', '💳', '🤝']
+    };
+
+    const isHex = item?.color?.startsWith('#');
+    const defaultColor = isHex ? 'emerald' : (item?.color || 'emerald');
+
+    const [form, setForm] = useState(item || { 
+      name: '', 
+      type: 'Despesa', 
+      icon: 'alimentacao', 
+      color: defaultColor 
+    });
+
+    const activeEmojis = emojiGroups[form.type] || emojiGroups['Despesa'];
+    const activeSwatch = COLOR_SWATCHES.find(s => s.id === form.color) || COLOR_SWATCHES[5];
+
     return (
-      <div className="space-y-4">
-        <div><label className="block text-xs text-zinc-400 mb-1">Nome</label><input autoFocus value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-xs text-zinc-400 mb-1">Tipo</label>
-            <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500">
-              <option>Despesa</option><option>Receita</option><option>Reserva</option>
+      <div className="space-y-5 animate-in fade-in zoom-in-95 duration-200">
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold tracking-wider text-gray-400 uppercase mb-2 block">Nome</label>
+            <input 
+              autoFocus 
+              value={form.name} 
+              onChange={e=>setForm({...form,name:e.target.value})} 
+              className={`w-full bg-gray-950/50 border border-gray-800 rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:border-transparent transition-all shadow-sm ${activeSwatch.ring}`}
+              placeholder="Ex: Mercado"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold tracking-wider text-gray-400 uppercase mb-2 block">Tipo</label>
+            <select 
+              value={form.type} 
+              onChange={e=>setForm({...form,type:e.target.value})} 
+              className={`w-full bg-gray-950/50 border border-gray-800 rounded-xl px-4 py-3 text-white outline-none focus:ring-2 focus:border-transparent transition-all shadow-sm appearance-none ${activeSwatch.ring}`}
+            >
+              <option>Despesa</option>
+              <option>Receita</option>
+              <option>Reserva</option>
             </select>
           </div>
-          <div><label className="block text-xs text-zinc-400 mb-1">Cor</label><input type="color" value={form.color} onChange={e=>setForm({...form,color:e.target.value})} className="w-full h-10 rounded border-0 bg-transparent cursor-pointer" /></div>
+
+          <div>
+            <label className="text-xs font-semibold tracking-wider text-gray-400 uppercase mb-2 block">Cor</label>
+            <div className="flex flex-wrap gap-3 p-4 bg-gray-950/50 border border-gray-800/60 rounded-xl">
+              {COLOR_SWATCHES.map(swatch => (
+                <div 
+                  key={swatch.id}
+                  onClick={() => setForm({...form, color: swatch.id})}
+                  className={`w-8 h-8 rounded-full cursor-pointer transition-transform hover:scale-110 ${swatch.bg}
+                    ${form.color === swatch.id ? `ring-2 ring-offset-2 ring-offset-gray-950 scale-110 ${swatch.ring}` : 'opacity-70 hover:opacity-100'}
+                  `}
+                />
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <label className="text-xs font-semibold tracking-wider text-gray-400 uppercase mb-2 block">Ícone</label>
+            <div className={`grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-4 bg-gray-950/50 border border-gray-800/60 rounded-xl [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-600 pr-2`}>
+              {activeEmojis.map(i => (
+                <button 
+                  key={i} 
+                  onClick={()=>setForm({...form, icon:i})} 
+                  className={`aspect-square p-1 rounded-xl flex items-center justify-center transition-all duration-200
+                    ${form.icon === i 
+                      ? `bg-gray-800 ring-2 shadow-md scale-105 ${activeSwatch.ring}` 
+                      : 'hover:bg-gray-800 opacity-70 hover:opacity-100'}
+                  `}
+                >
+                  <EmojiIcon emoji={i} color={form.color} size="md" />
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap max-h-40 overflow-y-auto p-2 bg-zinc-950 rounded-lg border border-zinc-800">
-          {emojiList.map(i => (
-            <button key={i} onClick={()=>setForm({...form, icon:i})} className={`p-1 rounded-xl transition ${form.icon===i ? 'bg-zinc-800 ring-2 ring-emerald-500' : 'hover:bg-zinc-800'}`}>
-              <EmojiIcon emoji={i} color={form.color} size="md" />
-            </button>
-          ))}
-        </div>
-        <button onClick={()=>handleSave(form, 'categories')} className="w-full bg-emerald-500 text-white rounded-lg py-2 mt-4 font-medium hover:bg-emerald-600 transition">Salvar Categoria</button>
+
+        <button 
+          onClick={()=>handleSave(form, 'categories')} 
+          className={`w-full text-white rounded-xl py-3.5 mt-2 font-medium transition-all shadow-lg active:scale-[0.98] hover:brightness-110 ${activeSwatch.bg}`}
+        >
+          Salvar Categoria
+        </button>
       </div>
     );
   };
@@ -224,7 +306,10 @@ function FinanceManager() {
                         <EmojiIcon emoji={c.icon || '📌'} color={c.color || 'zinc'} size="md" />
                         <span className="text-sm font-medium text-zinc-200">{c.name}</span>
                       </div>
-                      <button onClick={()=>{setEditingItem(c); setModalType('category');}} className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-emerald-400"><LucideIcons.Edit2 size={14}/></button>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={()=>{setEditingItem(c); setModalType('category');}} className="p-1.5 rounded-md text-zinc-500 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors"><LucideIcons.Edit2 size={14}/></button>
+                        <button onClick={()=>{setDeleteContext({id:c.id, collection:'categories', title:c.name}); setModalType('delete');}} className="p-1.5 rounded-md text-zinc-500 hover:bg-rose-500/10 hover:text-rose-400 transition-colors"><LucideIcons.Trash2 size={14}/></button>
+                      </div>
                     </div>
                   ))}
                 </div>

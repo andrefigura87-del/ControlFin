@@ -15,7 +15,7 @@ export function useFinance() {
 
   // Inicialização (HOTFIX: Impedir loop infinito e carregar apenas quando logado)
   useEffect(() => {
-    if (!user) return; // Só dispara se houver um usuário autenticado
+    if (!user?.id) return; // Só dispara se houver um usuário autenticado
 
     const fetchData = async () => {
       setLoading(true);
@@ -36,7 +36,7 @@ export function useFinance() {
     };
 
     fetchData();
-  }, [user]); // Dependência no objeto user para reagir a login/logout
+  }, [user?.id]); // Dependência no ID do user para não reagir a mudanças de referência (ex: token refresh no onFocus)
 
   // HELPERS
   const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);

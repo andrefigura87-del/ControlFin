@@ -1,126 +1,103 @@
 import React from 'react';
-import { 
-  Wallet, TrendingUp, TrendingDown, DollarSign, Activity, CreditCard as CardIcon 
-} from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useFinance } from '../transactions/useFinance';
-import AccountCard from '../../shared/components/AccountCard';
-import CreditCard from '../../shared/components/CreditCard';
-import EmojiIcon from '../../shared/components/EmojiIcon';
+import { Card, Button, InputBase, SummaryCard, CreditCardWidget, TransactionTable } from '../../shared/ui';
 
-const DashboardView = ({ onEditAccount, onDeleteAccount }) => {
-  const { metrics, utils } = useFinance();
+const DashboardView = () => {
+  const { metrics, utils, data } = useFinance();
   const { formatMoney } = utils;
-  const { 
-    totalBalance, monthReceitas, monthDespesas, monthReservas, 
-    expensesByCategory, maxExpense, chartData 
-  } = metrics;
+  const { totalBalance, monthReceitas, monthDespesas, enrichedCards, monthTransactions } = metrics;
+
+  // Transform transactions to match the UI component signature
+  const recentTransactions = monthTransactions
+    .slice(0, 5)
+    .map(t => ({
+      id: t.id,
+      date: t.date,
+      description: t.description,
+      amount: t.amount,
+      type: t.type === 'Receita' ? 'income' : 'expense',
+      category: data.categories.find(c => c.id === t.categoryId)?.name || 'Outros'
+    }));
 
   return (
-    <div className="space-y-6">
-      {/* Resumo Superior */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Saldo Total', val: totalBalance, icon: Wallet, color: 'text-white' },
-          { label: 'Receitas do Mês', val: monthReceitas, icon: TrendingUp, color: 'text-emerald-400' },
-          { label: 'Reservas do Mês', val: monthReservas, icon: DollarSign, color: 'text-blue-400' },
-          { label: 'Despesas do Mês', val: monthDespesas, icon: TrendingDown, color: 'text-rose-400' },
-        ].map((card, i) => (
-          <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg">
-            <div className="text-zinc-400 text-sm mb-1 flex items-center gap-2">
-              <card.icon size={16}/> {card.label}
-            </div>
-            <div className={`text-2xl md:text-3xl font-mono tracking-tight ${card.color}`}>
-              {formatMoney(card.val)}
-            </div>
-          </div>
-        ))}
+    <div className="space-y-8">
+      {/* 1. Header do Dashboard */}
+      <div 
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-slide-up-fade" 
+        style={{ animationFillMode: 'backwards', animationDelay: '0ms' }}
+      >
+        <div>
+          <h1 className="text-3xl font-semibold text-white tracking-tight">Visão Geral</h1>
+          <p className="text-gray-400 mt-1">Bem-vindo de volta! Acompanhe suas finanças.</p>
+        </div>
+        <Button variant="solid">Importar OFX</Button>
       </div>
 
-      {/* Gráfico de Liquidez */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg">
-        <h3 className="text-lg font-medium text-emerald-400 mb-6 flex justify-between items-center font-sans">
-          <div className="flex items-center gap-2"><Activity size={18}/> Evolução de Liquidez Diária</div>
-        </h3>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-              <XAxis dataKey="day" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis hide />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} 
-                itemStyle={{ fontSize: '12px' }} 
+      {/* 2. Top Grid (Resumo Financeiro) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SummaryCard 
+          title="Saldo Atual" 
+          value={formatMoney(totalBalance || 0)} 
+          trend="neutral" 
+          className="animate-slide-up-fade"
+          style={{ animationFillMode: 'backwards', animationDelay: '100ms' }}
+        />
+        <SummaryCard 
+          title="Receitas" 
+          value={formatMoney(monthReceitas || 0)} 
+          trend="positive" 
+          className="animate-slide-up-fade"
+          style={{ animationFillMode: 'backwards', animationDelay: '200ms' }}
+        />
+        <SummaryCard 
+          title="Despesas" 
+          value={formatMoney(monthDespesas || 0)} 
+          trend="negative" 
+          className="animate-slide-up-fade"
+          style={{ animationFillMode: 'backwards', animationDelay: '300ms' }}
+        />
+      </div>
+
+      {/* 3. Middle Section (Cartões e Ações) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div 
+          className="lg:col-span-2 animate-slide-up-fade" 
+          style={{ animationFillMode: 'backwards', animationDelay: '400ms' }}
+        >
+          <Card className="min-h-[220px] h-full flex items-center justify-center text-gray-500 border-dashed">
+            Gráfico de Fluxo de Caixa em Breve
+          </Card>
+        </div>
+        <div 
+          className="lg:col-span-1 flex flex-col gap-4 animate-slide-up-fade" 
+          style={{ animationFillMode: 'backwards', animationDelay: '500ms' }}
+        >
+          {enrichedCards?.length > 0 ? (
+            enrichedCards.map(c => (
+              <CreditCardWidget 
+                key={c.id}
+                bankId={c.bank || 'default'} 
+                bankName={c.name} 
+                limit={c.limit || 0} 
+                used={c.currentInvoice || 0} 
+                lastFour={c.lastFour || '****'} 
               />
-              <Area type="monotone" dataKey="Saldo Projetado" stroke="#71717a" strokeDasharray="5 5" fillOpacity={0} />
-              <Area type="monotone" dataKey="Saldo Real" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorReal)" />
-            </AreaChart>
-          </ResponsiveContainer>
+            ))
+          ) : (
+            <Card className="min-h-[220px] h-full flex items-center justify-center text-gray-500 border-dashed">
+              Nenhum cartão
+            </Card>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Contas & Cartões */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg">
-          <h3 className="text-lg font-medium text-emerald-400 mb-4 flex items-center gap-2 font-sans">
-            <CardIcon size={18}/> Contas & Cartões
-          </h3>
-          <div className="space-y-3">
-            {metrics.enrichedAccounts.map(a => (
-              <AccountCard 
-                key={a.id} 
-                account={a} 
-                balance={a.currentBalance} 
-                formatMoney={formatMoney}
-                onEdit={onEditAccount}
-                onDelete={onDeleteAccount}
-              />
-            ))}
-            {metrics.enrichedCards.map(c => (
-              <CreditCard 
-                key={c.id} 
-                card={c} 
-                variant="compact"
-                used={c.used}
-                invoice={c.currentInvoice}
-                availableLimit={c.availableLimit}
-                formatMoney={formatMoney}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Categotias */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col font-sans">
-          <h3 className="text-lg font-medium text-emerald-400 mb-4 flex items-center gap-2">
-            <Activity size={18}/> Despesas por Categoria
-          </h3>
-          <div className="flex-1 space-y-4">
-            {expensesByCategory.map(c => (
-              <div key={c.id} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <div className="flex items-center gap-3 text-zinc-200">
-                    <EmojiIcon emoji={c.icon || '📌'} color={c.color || 'zinc'} size="sm" /> 
-                    {c.name}
-                  </div>
-                  <div className="font-mono text-zinc-400">{formatMoney(c.total)}</div>
-                </div>
-                <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full rounded-full transition-all duration-1000" 
-                    style={{ width: `${(c.total / maxExpense) * 100}%`, backgroundColor: c.color }} 
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* 4. Bottom Section (Últimas Transações) */}
+      <div 
+        className="mt-8 animate-slide-up-fade" 
+        style={{ animationFillMode: 'backwards', animationDelay: '600ms' }}
+      >
+        <h2 className="text-xl font-semibold text-white mb-6">Últimas Transações</h2>
+        <TransactionTable transactions={recentTransactions} />
       </div>
     </div>
   );

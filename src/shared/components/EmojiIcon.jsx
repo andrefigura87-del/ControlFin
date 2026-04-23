@@ -22,7 +22,12 @@ const SIZE_VARIANTS = {
   xl: 'w-16 h-16 text-4xl'
 };
 
+import { getCategoryConfig } from '../constants/categoryMap';
+
 const EmojiIcon = ({ emoji, color = 'zinc', size = 'md', className = '' }) => {
+  const isIdentifier = emoji && emoji.length > 2;
+  const resolvedEmoji = isIdentifier ? getCategoryConfig(emoji).emoji : emoji;
+
   const isHex = color?.startsWith('#');
   const colorClass = isHex ? '' : (COLOR_VARIANTS[color] || COLOR_VARIANTS.zinc);
   const sizeClass = SIZE_VARIANTS[size] || SIZE_VARIANTS.md;
@@ -38,7 +43,7 @@ const EmojiIcon = ({ emoji, color = 'zinc', size = 'md', className = '' }) => {
       className={`flex items-center justify-center rounded-xl border font-emoji leading-none select-none shadow-sm ${colorClass} ${sizeClass} ${className}`}
       style={style}
     >
-      <span className="translate-y-[1px]">{emoji}</span>
+      <span className="translate-y-[1px]">{resolvedEmoji}</span>
     </div>
   );
 };

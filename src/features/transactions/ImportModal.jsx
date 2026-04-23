@@ -7,6 +7,7 @@ import React, { useState, useRef } from 'react';
 import { X, Upload, FileText, AlertCircle, CheckCircle, Loader2, Trash2 } from 'lucide-react';
 import { parseOFX, detectBank, validateOFX } from '../../lib/ofx/parser';
 import { calculateTotals } from '../../lib/ofx/mapper';
+import { getCategoryConfig } from '../../shared/constants/categoryMap';
 
 export default function ImportModal({ 
   isOpen, 
@@ -245,11 +246,11 @@ export default function ImportModal({
             <select
               value={selectedWalletId}
               onChange={(e) => { handleGlobalWalletChange(e.target.value); setReplaceExisting(false); }}
-              className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:border-emerald-500"
+              className="bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2 text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
             >
-              <option value="">Selecione...</option>
+              <option value="" className="bg-zinc-900 text-zinc-400">Selecione...</option>
               {wallets.map(w => (
-                <option key={w.id} value={w.id}>{w.name}</option>
+                <option key={w.id} value={w.id} className="bg-zinc-900 text-white">{w.name}</option>
               ))}
             </select>
           </div>
@@ -262,7 +263,7 @@ export default function ImportModal({
               type="checkbox"
               checked={replaceExisting}
               onChange={(e) => setReplaceExisting(e.target.checked)}
-              className="w-4 h-4 rounded bg-zinc-800 border-zinc-600 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+              className="accent-emerald-500 w-4 h-4 cursor-pointer"
             />
             <span className="text-sm text-zinc-300">
               Substituir todas as transações existentes nesta carteira
@@ -301,7 +302,7 @@ export default function ImportModal({
       </div>
 
       {/* Tabela de preview */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full">
         <table className="w-full text-sm">
           <thead className="bg-zinc-900/50 sticky top-0">
             <tr className="text-left text-zinc-400">
@@ -332,16 +333,16 @@ export default function ImportModal({
                   <select
                     value={tx.type}
                     onChange={(e) => handleTypeChange(tx.id, e.target.value)}
-                    className={`text-xs rounded px-2 py-1 bg-zinc-800 border border-zinc-700 outline-none ${
-                      tx.type === 'Despesa' ? 'text-red-400' :
-                      tx.type === 'Receita' ? 'text-emerald-400' :
-                      'text-amber-400'
+                    className={`w-full text-xs rounded-lg px-2 py-1.5 bg-zinc-950/50 border outline-none focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer ${
+                      tx.type === 'Despesa' ? 'text-red-400 border-zinc-800' :
+                      tx.type === 'Receita' ? 'text-emerald-400 border-zinc-800' :
+                      'text-amber-400 border-zinc-800'
                     }`}
                   >
-                    <option value="Despesa">Despesa</option>
-                    <option value="Receita">Receita</option>
-                    <option value="Reserva">Reserva</option>
-                    <option value="Transferência">Transferência</option>
+                    <option value="Despesa" className="bg-zinc-900 text-white">Despesa</option>
+                    <option value="Receita" className="bg-zinc-900 text-white">Receita</option>
+                    <option value="Reserva" className="bg-zinc-900 text-white">Reserva</option>
+                    <option value="Transferência" className="bg-zinc-900 text-white">Transferência</option>
                   </select>
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-white">
@@ -352,31 +353,35 @@ export default function ImportModal({
                     <select
                       value={tx.destination_wallet_id || ''}
                       onChange={(e) => handleDestinationWalletChange(tx.id, e.target.value)}
-                      className={`w-full text-xs rounded px-2 py-1 bg-zinc-800 border outline-none ${
-                        tx.destination_wallet_id ? 'border-zinc-700 text-white' : 'border-red-800 text-red-400'
+                      className={`w-full text-xs rounded-lg px-2 py-1.5 bg-zinc-950/50 border outline-none focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer ${
+                        tx.destination_wallet_id ? 'border-zinc-800 text-white' : 'border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
                       }`}
                     >
-                      <option value="">Selecionar Destino...</option>
+                      <option value="" className="bg-zinc-900 text-zinc-400">Selecionar Destino...</option>
                       {wallets
-                        .filter(w => w.id !== selectedWalletId)  // Anti-loop: não mostrar origem
+                        .filter(w => w.id !== selectedWalletId)
                         .map(w => (
-                          <option key={w.id} value={w.id}>{w.name}</option>
+                          <option key={w.id} value={w.id} className="bg-zinc-900 text-white">{w.name}</option>
                         ))}
                     </select>
                   ) : (
                     <select
                       value={tx.category_id || ''}
                       onChange={(e) => handleCategoryChange(tx.id, e.target.value)}
-                      className={`w-full text-xs rounded px-2 py-1 bg-zinc-800 border outline-none ${
-                        tx.category_id ? 'border-zinc-700 text-white' : 'border-red-800 text-red-400'
+                      className={`w-full text-xs rounded-lg px-2 py-1.5 bg-zinc-950/50 border outline-none focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer ${
+                        tx.category_id ? 'border-zinc-800 text-white' : 'border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
                       }`}
                     >
-                      <option value="">Selecionar...</option>
+                      <option value="" className="bg-zinc-900 text-zinc-400">Selecionar Categoria...</option>
                       {categories
                         .filter(c => c.type === tx.type || c.type === (tx.type === 'Reserva' ? 'Despesa' : tx.type))
-                        .map(c => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
+                        .map(c => {
+                          const isIdentifier = c.icon && c.icon.length > 2;
+                          const emoji = isIdentifier ? getCategoryConfig(c.icon).emoji : (c.icon || '🏷️');
+                          return (
+                            <option key={c.id} value={c.id} className="bg-zinc-900 text-white">{emoji} {c.name}</option>
+                          );
+                        })}
                     </select>
                   )}
                 </td>

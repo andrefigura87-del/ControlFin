@@ -10,6 +10,8 @@ import { exportTransactionsToCSV, downloadCSV } from '../../lib/exportUtils';
 import ImportModal from './ImportModal';
 import { supabase } from '../../lib/supabase';
 import EmojiIcon from '../../shared/components/EmojiIcon';
+import { getCategoryConfig } from '../../shared/constants/categoryMap';
+import { Card, Button, InputBase, TransactionTable } from '../../shared/ui';
 
 // Componente principal
 const TransactionsView = () => {
@@ -198,10 +200,19 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
             </button>
           ))}
         </div>
-        <div><label className="block text-xs text-zinc-400 mb-1">Descrição</label><input autoFocus value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
+        <div>
+          <label className="block text-xs text-zinc-400 mb-1">Descrição</label>
+          <InputBase autoFocus value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="py-2.5 text-sm" />
+        </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-xs text-zinc-400 mb-1">Valor</label><NumericFormat value={form.amount} onValueChange={(v)=>setForm({...form, amount: v.floatValue})} prefix="R$ " thousandSeparator="." decimalSeparator="," decimalScale={2} fixedDecimalScale className="font-mono w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500" /></div>
-          <div><label className="block text-xs text-zinc-400 mb-1">Data</label><input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500 [color-scheme:dark]" /></div>
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Valor</label>
+            <NumericFormat value={form.amount} onValueChange={(v)=>setForm({...form, amount: v.floatValue})} prefix="R$ " thousandSeparator="." decimalSeparator="," decimalScale={2} fixedDecimalScale className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm font-mono text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm" />
+          </div>
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Data</label>
+            <input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm [color-scheme:dark]" />
+          </div>
         </div>
         
         <div className="grid grid-cols-1 gap-4">
@@ -212,7 +223,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
                 <select 
                   value={form.paymentMethod?.id} 
                   onChange={e => setForm({...form, paymentMethod: { type: 'account', id: e.target.value }})}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+                  className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
                 >
                   <option value="">Selecione a Origem</option>
                   {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
@@ -223,7 +234,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
                 <select 
                   value={form.destinationAccountId} 
                   onChange={e => setForm({...form, destinationAccountId: e.target.value})}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+                  className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
                 >
                   <option value="">Selecione o Destino</option>
                   {form.type === 'Pagamento Fatura' ? (
@@ -241,9 +252,18 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
                 <select 
                   value={form.categoryId} 
                   onChange={e=>setForm({...form, categoryId: e.target.value})} 
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+                  className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
                 >
-                  {data.categories.filter(c => c.type === form.type || form.type === 'Transferência').map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  <option value="">Selecione uma categoria...</option>
+                  {data.categories.filter(c => c.type === form.type || form.type === 'Transferência').map(c => {
+                    const isIdentifier = c.icon && c.icon.length > 2;
+                    const emoji = isIdentifier ? getCategoryConfig(c.icon).emoji : (c.icon || '🏷️');
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {emoji} {c.name}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div>
@@ -254,7 +274,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
                     const account = data.accounts.find(a => a.id === e.target.value);
                     setForm({...form, paymentMethod: { type: account ? 'account' : 'card', id: e.target.value }});
                   }} 
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+                  className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
                 >
                   <optgroup label="Contas">
                     {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
@@ -274,7 +294,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
             <select 
               value={form.familyId} 
               onChange={e=>setForm({...form, familyId: e.target.value})} 
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
+              className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
             >
               <option value="">Selecione o Membro</option>
               {data.family.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -310,47 +330,71 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
           <textarea 
             value={form.notes || ''} 
             onChange={e=>setForm({...form, notes: e.target.value})} 
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500 min-h-[80px]"
+            className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm min-h-[80px]"
             placeholder="Detalhes adicionais..."
           />
         </div>
 
-        <button onClick={handleLocalSave} disabled={!form.amount} className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-medium rounded-xl py-3 transition shadow-lg shadow-emerald-500/20">
+        <Button variant="solid" onClick={handleLocalSave} disabled={!form.amount} className="w-full py-3 text-sm">
           Salvar Transação
-        </button>
+        </Button>
       </div>
     );
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <ListHeader 
-        title="Transações" 
-        icon={List} 
-        onAdd={() => { setEditingItem(null); setModalType('transaction'); }}
-      >
-        <button onClick={handleOpenImport} className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-xl flex items-center gap-2 border border-zinc-700 transition text-sm">
-          <Upload size={18}/> Importar OFX
-        </button>
-        <button onClick={handleExportCSV} className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-xl flex items-center gap-2 border border-zinc-700 transition text-sm">
-          <FileText size={18}/> Exportar CSV
-        </button>
-      </ListHeader>
+    <div className="animate-fade-in duration-500">
+      {/* 1. Header de Ações */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <h1 className="text-3xl font-semibold text-white tracking-tight flex items-center gap-3">
+          <List className="text-emerald-500" size={28} />
+          Transações
+        </h1>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={handleOpenImport} className="flex items-center gap-2">
+            <Upload size={18} /> Importar OFX
+          </Button>
+          <Button variant="solid" onClick={() => { setEditingItem(null); setModalType('transaction'); }} className="flex items-center gap-2">
+            <Activity size={18} /> Nova Transação
+          </Button>
+        </div>
+      </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-lg overflow-hidden flex flex-col mb-8">
-        <div className="p-4 border-b border-zinc-800 grid grid-cols-1 md:grid-cols-4 gap-4 bg-zinc-950/50">
+      {/* 2. Área de Filtros (Filtro Inteligente) */}
+      <Card className="p-4 mb-6 flex flex-wrap gap-4 items-end">
+        <div className="flex-1 min-w-[200px]">
+          <label className="block text-xs text-zinc-400 mb-1">Busca por descrição</label>
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-2.5 text-zinc-500"/>
-            <input value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="Burcar descrição..." className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-emerald-500" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"/>
+            <InputBase 
+              value={searchTerm} 
+              onChange={e=>setSearchTerm(e.target.value)} 
+              placeholder="Buscar..." 
+              className="pl-9 py-2 text-sm"
+            />
           </div>
-          
-          <select value={filterCategory} onChange={e=>setFilterCategory(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500">
-            <option value="">Todas Categorias</option>
+        </div>
+
+        <div className="w-full sm:w-auto">
+          <label className="block text-xs text-zinc-400 mb-1">Categoria</label>
+          <select 
+            value={filterCategory} 
+            onChange={e=>setFilterCategory(e.target.value)} 
+            className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
+          >
+            <option value="">Todas</option>
             {data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
           </select>
+        </div>
 
-          <select value={filterSource} onChange={e=>setFilterSource(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500">
-            <option value="">Todas as Fontes</option>
+        <div className="w-full sm:w-auto">
+          <label className="block text-xs text-zinc-400 mb-1">Fonte</label>
+          <select 
+            value={filterSource} 
+            onChange={e=>setFilterSource(e.target.value)} 
+            className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
+          >
+            <option value="">Todas</option>
             <optgroup label="Contas">
               {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
             </optgroup>
@@ -358,68 +402,66 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
               {data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)}
             </optgroup>
           </select>
+        </div>
 
-          <div className="flex gap-2">
-            <input type="date" value={filterDateStart} onChange={e=>setFilterDateStart(e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-2 text-xs text-white outline-none focus:border-emerald-500 [color-scheme:dark]" />
-            <input type="date" value={filterDateEnd} onChange={e=>setFilterDateEnd(e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-2 text-xs text-white outline-none focus:border-emerald-500 [color-scheme:dark]" />
+        <div className="w-full sm:w-auto flex gap-2">
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Data Início</label>
+            <input 
+              type="date" 
+              value={filterDateStart} 
+              onChange={e=>setFilterDateStart(e.target.value)} 
+              className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 [color-scheme:dark]" 
+            />
           </div>
-
-          <button onClick={()=>{setSearchTerm(''); setFilterCategory(''); setFilterDateStart(''); setFilterDateEnd(''); setFilterSource('');}} className="col-span-1 md:col-span-full xl:col-span-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs text-zinc-400 transition mb-2">Limpar Filtros</button>
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Data Fim</label>
+            <input 
+              type="date" 
+              value={filterDateEnd} 
+              onChange={e=>setFilterDateEnd(e.target.value)} 
+              className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 [color-scheme:dark]" 
+            />
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-zinc-900/50 border-b border-zinc-800 text-zinc-400">
-              <tr>
-                <th className="px-4 py-3 font-medium">Data</th>
-                <th className="px-4 py-3 font-medium">Descrição</th>
-                <th className="px-4 py-3 font-medium">Categoria</th>
-                <th className="px-4 py-3 font-medium">Fonte</th>
-                <th className="px-4 py-3 font-medium text-right">Valor</th>
-                <th className="px-4 py-3 font-medium text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/50">
-              {txs.length === 0 ? (
-                <tr><td colSpan="6" className="p-8 text-center text-zinc-500 italic">Nenhuma transação encontrada para este filtro.</td></tr>
-              ) : txs.map(t => {
-                const cat = data.categories.find(c => c.id === t.categoryId);
-                const source = t.paymentMethod?.type === 'account' ? data.accounts.find(a=>a.id===t.paymentMethod.id) : data.cards.find(c=>c.id===t.paymentMethod.id);
-                return (
-                  <tr key={t.id} className="hover:bg-zinc-800/30 transition group">
-                    <td className="px-4 py-3 text-zinc-300">{formatDate(t.date)}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-white group-hover:text-emerald-400 transition flex items-center gap-2">
-                        {t.description}
-                        {!t.isPaid && <span className="text-[10px] px-1.5 py-0.5 rounded border border-yellow-500/30 text-yellow-400 bg-yellow-500/10 uppercase tracking-wider">Provisionado</span>}
-                      </div>
-                      {t.notes && <div className="text-xs text-zinc-500 mt-1 max-w-[200px] truncate" title={t.notes}>{t.notes}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {cat && (
-                        <div className="flex items-center gap-2">
-                          <EmojiIcon emoji={cat.icon || '📌'} color={cat.color || 'zinc'} size="sm" />
-                          <span className="text-zinc-300 text-xs">{cat.name}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-400 text-xs flex items-center gap-2">
-                      {t.paymentMethod?.type === 'card' ? <CreditCard size={14}/> : <Building size={14}/>} {source?.name}
-                    </td>
-                    <td className={`px-4 py-3 font-mono text-right font-medium ${t.type === 'Receita' || (t.type === 'Transferência' && t.destinationAccountId === source?.id) ? 'text-emerald-400' : t.type === 'Reserva' ? 'text-blue-400' : 'text-rose-400'}`}>
-                      {t.type === 'Despesa' || ((t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.paymentMethod?.id === source?.id) ? '-' : '+'}{formatMoney(t.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-center opacity-0 group-hover:opacity-100 transition">
-                      <button onClick={()=>{setEditingItem(t); setModalType('transaction');}} className="p-1 text-zinc-500 hover:text-emerald-400 mx-1 transition"><Edit2 size={16}/></button>
-                      <button onClick={()=>{setDeleteContext({id: t.id, collection: 'transactions', title: t.description}); setModalType('delete');}} className="p-1 text-zinc-500 hover:text-rose-400 mx-1 transition"><Trash2 size={16}/></button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        {(searchTerm || filterCategory || filterSource || filterDateStart || filterDateEnd) && (
+          <div className="w-full sm:w-auto mt-2 sm:mt-0">
+            <button 
+              onClick={()=>{setSearchTerm(''); setFilterCategory(''); setFilterDateStart(''); setFilterDateEnd(''); setFilterSource('');}} 
+              className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-xs font-medium text-zinc-300 transition-all w-full sm:w-auto"
+            >
+              Limpar Filtros
+            </button>
+          </div>
+        )}
+      </Card>
+
+      {/* 3. Listagem Principal */}
+      <Card className="p-0 overflow-hidden mb-8">
+        <TransactionTable 
+          transactions={txs.map(t => {
+            const cat = data.categories.find(c => c.id === t.categoryId);
+            return {
+              id: t.id,
+              date: t.date,
+              description: t.description,
+              amount: t.amount,
+              type: t.type === 'Receita' || t.type === 'Transferência' ? 'income' : 'expense',
+              category: cat ? (
+                <div className="flex items-center gap-2">
+                  <EmojiIcon emoji={cat.icon || '📌'} color={cat.color || 'zinc'} size="sm" />
+                  <span className="text-zinc-300 font-medium">{cat.name}</span>
+                </div>
+              ) : 'Outros',
+              raw: t
+            };
+          })}
+          emptyMessage="Nenhuma transação encontrada. Que tal importar seu primeiro arquivo OFX?"
+          onEdit={(t) => { setEditingItem(t); setModalType('transaction'); }}
+          onDelete={(t) => { setDeleteContext({id: t.id, collection: 'transactions', title: t.description}); setModalType('delete'); }}
+        />
+      </Card>
 
       {modalType === 'transaction' && (
         <Modal title={editingItem ? 'Editar Transação' : 'Nova Transação'} onClose={() => setModalType(null)}>
