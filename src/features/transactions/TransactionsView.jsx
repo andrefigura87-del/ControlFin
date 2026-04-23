@@ -9,17 +9,7 @@ import Modal from '../../shared/components/Modal';
 import { exportTransactionsToCSV, downloadCSV } from '../../lib/exportUtils';
 import ImportModal from './ImportModal';
 import { supabase } from '../../lib/supabase';
-import CategoryDropdown from '../../shared/components/CategoryDropdown';
-import VolumetricIcon from '../../shared/components/VolumetricIcon';
-import { DEFAULT_CATEGORIES } from '../../shared/constants/categories';
-
-// Helper para renderizar ícone de categoria com fallback defensivo
-const renderCategoryIcon = (category) => {
-  if (!category || !category.icon) {
-    return <VolumetricIcon icon={AlertTriangle} color="danger" size="sm" />;
-  }
-  return <VolumetricIcon icon={category.icon} color={category.color || 'primary'} size="sm" />;
-};
+import EmojiIcon from '../../shared/components/EmojiIcon';
 
 // Componente principal
 const TransactionsView = () => {
@@ -28,16 +18,7 @@ const TransactionsView = () => {
   const { saveItem, deleteItem } = operations;
   const { todayISO } = metrics;
 
-  // Categorias enriquecidas com ícones e cores
-  const enrichedCategories = data.categories.map(cat => {
-    const key = cat.name?.toLowerCase().replace(/\s+/g, '_');
-    const config = DEFAULT_CATEGORIES[key] || DEFAULT_CATEGORIES[cat.name?.toLowerCase()];
-    return {
-      ...cat,
-      icon: config?.icon || HelpCircle,
-      color: config?.color || 'secondary'
-    };
-  });
+
 
   // ESTADOS LOCAIS PARA FILTROS E MODAIS
   const [searchTerm, setSearchTerm] = useState('');
@@ -262,7 +243,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
                   onChange={e=>setForm({...form, categoryId: e.target.value})} 
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500"
                 >
-                  {data.categories.filter(c => c.type === form.type || form.type === 'Transferência').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {data.categories.filter(c => c.type === form.type || form.type === 'Transferência').map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
               </div>
               <div>
@@ -365,7 +346,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
           
           <select value={filterCategory} onChange={e=>setFilterCategory(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500">
             <option value="">Todas Categorias</option>
-            {data.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
           </select>
 
           <select value={filterSource} onChange={e=>setFilterSource(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500">
@@ -415,7 +396,12 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
                       {t.notes && <div className="text-xs text-zinc-500 mt-1 max-w-[200px] truncate" title={t.notes}>{t.notes}</div>}
                     </td>
                     <td className="px-4 py-3">
-                      {cat && <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-800 text-xs text-zinc-300"><span>{cat.icon}</span> {cat.name}</span>}
+                      {cat && (
+                        <div className="flex items-center gap-2">
+                          <EmojiIcon emoji={cat.icon || '📌'} color={cat.color || 'zinc'} size="sm" />
+                          <span className="text-zinc-300 text-xs">{cat.name}</span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-zinc-400 text-xs flex items-center gap-2">
                       {t.paymentMethod?.type === 'card' ? <CreditCard size={14}/> : <Building size={14}/>} {source?.name}
