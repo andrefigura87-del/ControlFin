@@ -11,7 +11,15 @@ export const CATEGORY_MAP = {
   investimentos: { emoji: '🏦', color: 'violet' },
   pets: { emoji: '🐶', color: 'amber' },
   viagens: { emoji: '✈️', color: 'sky' },
-  default: { emoji: '📌', color: 'zinc' }
+  default: { emoji: '📌', color: 'zinc' },
+  academia: { emoji: '🏋️', color: 'emerald' },
+  emprestimo: { emoji: '🤝', color: 'amber' },
+  reembolso: { emoji: '🔄', color: 'blue' },
+  eletrodomesticos: { emoji: '🔌', color: 'zinc' },
+  internet_telefone: { emoji: '🌐', color: 'sky' },
+  assinaturas: { emoji: '📺', color: 'red' },
+  cartao_credito: { emoji: '💳', color: 'purple' },
+
 };
 
 export const getCategoryConfig = (name) => {
@@ -20,6 +28,6 @@ export const getCategoryConfig = (name) => {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // remove acentos
     .replace(/\s+/g, '_');
-  
+
   return CATEGORY_MAP[normalized] || CATEGORY_MAP.default;
 };

@@ -11,7 +11,8 @@ import { v4 as uuidv4 } from 'uuid';
  * @param {number} index - Transaction index for generating IDs
  * @returns {object} Mapped transaction for preview
  */
-export function mapToTransaction(ofxTx, bankConfig = null, index = 0) {
+// eslint-disable-next-line no-unused-vars
+export function mapToTransaction(ofxTx, _bankConfig = null, index = 0) {
   // Parse amount - handle different formats
   const amount = parseAmount(ofxTx.amount);
   

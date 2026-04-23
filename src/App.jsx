@@ -21,7 +21,6 @@ function FinanceManager() {
   const { data, metrics, loading, utils, operations } = useFinance();
   const { formatMoney } = utils;
   const { saveItem, deleteItem } = operations;
-  const { todayISO } = metrics;
   const { signOut, user } = useAuth();
 
   const [activeTab, setActiveTab] = useState('dashboard');

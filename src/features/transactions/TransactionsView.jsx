@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { 
   List, Search, Edit2, Trash2, CreditCard, Building, Activity, FileText, Upload, HelpCircle
 } from 'lucide-react';
@@ -119,7 +119,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
 
 
     // UPSERT no banco (previne duplicatas via constraint UNIQUE)
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("transactions")
       .upsert(records, { onConflict: 'external_id', ignoreDuplicates: true })
       .select();
@@ -160,7 +160,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
           setForm(prev => ({ ...prev, categoryId: reservaCat.id }));
         }
       }
-    }, [form.type, data.categories]);
+    }, [form.type, form.categoryId]);
 
     const handleLocalSave = async () => {
       let finalForm = { ...form };

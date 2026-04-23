@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 
+// eslint-disable-next-line no-unused-vars
 const ListHeader = ({ title, icon: Icon, onAdd, children }) => (
   <div className="flex justify-between items-center mb-6">
     <h2 className="text-2xl font-medium text-white flex items-center gap-3">

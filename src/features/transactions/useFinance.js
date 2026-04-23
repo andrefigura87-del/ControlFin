@@ -36,7 +36,7 @@ export function useFinance() {
     };
 
     fetchData();
-  }, [user?.id]); // Dependência no ID do usuário para reagir a login/logout
+  }, [user]); // Dependência no objeto user para reagir a login/logout
 
   // HELPERS
   const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -200,6 +200,7 @@ export function useFinance() {
       if (item.id) {
         result = await methods.update(item.id, item);
       } else {
+        // eslint-disable-next-line no-unused-vars
         const { id, ...payload } = item;
         result = await methods.create(payload);
       }

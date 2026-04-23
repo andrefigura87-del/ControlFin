@@ -9,11 +9,11 @@ import CreditCard from '../../shared/components/CreditCard';
 import EmojiIcon from '../../shared/components/EmojiIcon';
 
 const DashboardView = ({ onEditAccount, onDeleteAccount }) => {
-  const { data, metrics, utils } = useFinance();
+  const { metrics, utils } = useFinance();
   const { formatMoney } = utils;
   const { 
     totalBalance, monthReceitas, monthDespesas, monthReservas, 
-    expensesByCategory, maxExpense, chartData, todayISO 
+    expensesByCategory, maxExpense, chartData 
   } = metrics;
 
   return (

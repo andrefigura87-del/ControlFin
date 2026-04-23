@@ -3,7 +3,7 @@ import { Users } from 'lucide-react';
 import { useFinance } from '../transactions/useFinance';
 import ListHeader from '../../shared/components/ListHeader';
 
-const FamilyView = ({ onEdit, onDelete, onAdd }) => {
+const FamilyView = ({ onEdit, onAdd }) => {
   const { data, metrics, utils } = useFinance();
   const { formatMoney } = utils;
   const { todayISO } = metrics;
