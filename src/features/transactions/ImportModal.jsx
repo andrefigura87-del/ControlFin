@@ -8,6 +8,8 @@ import { X, Upload, FileText, AlertCircle, CheckCircle, Loader2, Trash2 } from '
 import { parseOFX, detectBank, validateOFX } from '../../lib/ofx/parser';
 import { calculateTotals } from '../../lib/ofx/mapper';
 import { getCategoryConfig } from '../../shared/constants/categoryMap';
+import { suggestCategory } from '../../shared/utils/categorySuggester';
+import { Select } from '../../shared/ui';
 
 export default function ImportModal({ 
   isOpen, 
@@ -68,8 +70,24 @@ export default function ImportModal({
         return;
       }
 
+      // Enriquecer com Sugestão de Categoria
+      const enriched = parsed.map(tx => {
+        const suggestedSlug = suggestCategory(tx.description);
+        const suggestedCategory = suggestedSlug 
+          ? categories.find(c => c.icon === suggestedSlug && (c.type === tx.type || (tx.type === 'Reserva' && c.type === 'Despesa'))) 
+          : null;
+        
+        return {
+          ...tx,
+          category_id: suggestedCategory?.id || null,
+          isAutoSuggested: !!suggestedCategory,
+          userModified: false,
+          isValid: Boolean(suggestedCategory?.id) || tx.type === 'Transferência'
+        };
+      });
+
       // Set transactions and move to preview
-      setTransactions(parsed);
+      setTransactions(enriched);
       setStep('preview');
       
     } catch (err) {
@@ -83,6 +101,7 @@ export default function ImportModal({
         return { 
           ...tx, 
           category_id: categoryId,
+          userModified: true, // Marca que o usuário interferiu
           isValid: (tx.type !== 'Transferência' && categoryId) || (tx.type === 'Transferência' && tx.destination_wallet_id)
         };
       }
@@ -145,7 +164,7 @@ export default function ImportModal({
     );
 
     if (validTransactions.length === 0) {
-      setError('Selecione uma categoria (ou carteira de destino para transferências) para todas as transações');
+      setError('Atribua uma categoria para as transações destacadas em vermelho');
       return;
     }
 
@@ -169,7 +188,10 @@ export default function ImportModal({
       // Call import callback with replace flag
       const stats = await onImport(toImport, { replaceExisting });
       
-      setImportStats(stats);
+      setImportStats({
+        ...stats,
+        skipped: transactions.length - stats.imported
+      });
       setStep('done');
       
     } catch (err) {
@@ -238,21 +260,26 @@ export default function ImportModal({
             <p className="text-sm text-zinc-400">
               {transactions.length} transações detectadas
               {bank && <span className="ml-2">• {bank.toUpperCase()}</span>}
+              {transactions.length > transactions.filter(tx => tx.isValid).length && (
+                <span className="ml-3 text-amber-500 font-medium">
+                  ⚠️ {transactions.length - transactions.filter(tx => tx.isValid).length} pendentes
+                </span>
+              )}
             </p>
           </div>
           
           <div className="flex items-center gap-3">
             <span className="text-sm text-zinc-400">Carteira:</span>
-            <select
+            <Select
               value={selectedWalletId}
               onChange={(e) => { handleGlobalWalletChange(e.target.value); setReplaceExisting(false); }}
-              className="bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2 text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
+              className="!w-48 !h-10"
             >
               <option value="" className="bg-zinc-900 text-zinc-400">Selecione...</option>
               {wallets.map(w => (
-                <option key={w.id} value={w.id} className="bg-zinc-900 text-white">{w.name}</option>
+                <option key={w.id} value={w.id} className="bg-zinc-900 text-white">🏦 {w.name}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -330,59 +357,70 @@ export default function ImportModal({
                   {tx.description}
                 </td>
                 <td className="px-3 py-2">
-                  <select
+                  <Select
                     value={tx.type}
                     onChange={(e) => handleTypeChange(tx.id, e.target.value)}
-                    className={`w-full text-xs rounded-lg px-2 py-1.5 bg-zinc-950/50 border outline-none focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer ${
-                      tx.type === 'Despesa' ? 'text-red-400 border-zinc-800' :
-                      tx.type === 'Receita' ? 'text-emerald-400 border-zinc-800' :
-                      'text-amber-400 border-zinc-800'
+                    className={`!h-9 !py-1 text-xs ${
+                      tx.type === 'Despesa' ? 'text-red-400' :
+                      tx.type === 'Receita' ? 'text-emerald-400' :
+                      'text-amber-400'
                     }`}
                   >
                     <option value="Despesa" className="bg-zinc-900 text-white">Despesa</option>
                     <option value="Receita" className="bg-zinc-900 text-white">Receita</option>
                     <option value="Reserva" className="bg-zinc-900 text-white">Reserva</option>
                     <option value="Transferência" className="bg-zinc-900 text-white">Transferência</option>
-                  </select>
+                  </Select>
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-white">
                   R$ {tx.amount.toFixed(2)}
                 </td>
                 <td className="px-3 py-2">
                   {tx.type === 'Transferência' ? (
-                    <select
+                    <Select
                       value={tx.destination_wallet_id || ''}
                       onChange={(e) => handleDestinationWalletChange(tx.id, e.target.value)}
-                      className={`w-full text-xs rounded-lg px-2 py-1.5 bg-zinc-950/50 border outline-none focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer ${
-                        tx.destination_wallet_id ? 'border-zinc-800 text-white' : 'border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
+                      className={`!h-9 !py-1 text-xs ${
+                        !tx.destination_wallet_id ? 'border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : ''
                       }`}
                     >
                       <option value="" className="bg-zinc-900 text-zinc-400">Selecionar Destino...</option>
                       {wallets
                         .filter(w => w.id !== selectedWalletId)
                         .map(w => (
-                          <option key={w.id} value={w.id} className="bg-zinc-900 text-white">{w.name}</option>
+                          <option key={w.id} value={w.id} className="bg-zinc-900 text-white">🏦 {w.name}</option>
                         ))}
-                    </select>
+                    </Select>
                   ) : (
-                    <select
-                      value={tx.category_id || ''}
-                      onChange={(e) => handleCategoryChange(tx.id, e.target.value)}
-                      className={`w-full text-xs rounded-lg px-2 py-1.5 bg-zinc-950/50 border outline-none focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer ${
-                        tx.category_id ? 'border-zinc-800 text-white' : 'border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
-                      }`}
-                    >
-                      <option value="" className="bg-zinc-900 text-zinc-400">Selecionar Categoria...</option>
-                      {categories
-                        .filter(c => c.type === tx.type || c.type === (tx.type === 'Reserva' ? 'Despesa' : tx.type))
-                        .map(c => {
-                          const isIdentifier = c.icon && c.icon.length > 2;
-                          const emoji = isIdentifier ? getCategoryConfig(c.icon).emoji : (c.icon || '🏷️');
-                          return (
-                            <option key={c.id} value={c.id} className="bg-zinc-900 text-white">{emoji} {c.name}</option>
-                          );
-                        })}
-                    </select>
+                    <div className="relative flex items-center gap-2">
+                      <Select
+                        value={tx.category_id || ''}
+                        onChange={(e) => handleCategoryChange(tx.id, e.target.value)}
+                        className={`!h-9 !py-1 text-xs ${
+                          !tx.category_id ? 'border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : ''
+                        }`}
+                      >
+                        <option value="" className="bg-zinc-900 text-zinc-400">Selecionar Categoria...</option>
+                        {categories
+                          .filter(c => c.type === tx.type || c.type === (tx.type === 'Reserva' ? 'Despesa' : tx.type))
+                          .map(c => {
+                            const config = getCategoryConfig(c.icon);
+                            return (
+                              <option key={c.id} value={c.id} className="bg-zinc-900 text-white">
+                                {config.emoji} {c.name}
+                              </option>
+                            );
+                          })}
+                      </Select>
+                      {tx.isAutoSuggested && !tx.userModified && (
+                        <span 
+                          className="text-amber-500/80 animate-pulse cursor-help flex-shrink-0 text-[10px]" 
+                          title="Sugerido automaticamente pelo ControlFin"
+                        >
+                          ✨
+                        </span>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="px-3 py-2">
@@ -448,10 +486,12 @@ export default function ImportModal({
         Importação Concluída!
       </h3>
       {importStats && (
-        <div className="text-center text-zinc-400 mt-4">
-          <p>{importStats.imported} transações importadas</p>
-          {importStats.duplicated > 0 && (
-            <p className="text-amber-400">{importStats.duplicated} duplicadas ignoradas</p>
+        <div className="text-center text-zinc-400 mt-4 space-y-1">
+          <p className="font-medium text-emerald-400">{importStats.imported} transações importadas com sucesso</p>
+          {importStats.skipped > 0 && (
+            <p className="text-xs text-zinc-500">
+              {importStats.skipped} registros ignorados (duplicados ou sem categoria)
+            </p>
           )}
         </div>
       )}

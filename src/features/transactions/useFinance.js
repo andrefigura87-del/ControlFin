@@ -40,7 +40,7 @@ export function useFinance() {
 
   // HELPERS
   const formatMoney = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-  const formatDate = (iso) => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+  const formatDate = (iso) => iso ? new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR') : '';
   const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   // CÁLCULOS DE MÉTRICAS
@@ -259,6 +259,12 @@ export function useFinance() {
     metrics,
     loading,
     utils: { formatMoney, formatDate },
-    operations: { saveItem, deleteItem, batchUpdate: api.batchUpdateTransactions, refresh }
+    operations: { 
+      saveItem, 
+      deleteItem, 
+      batchUpdate: api.batchUpdateTransactions, 
+      clearAllTransactions: api.deleteAllTransactions,
+      refresh 
+    }
   };
 }

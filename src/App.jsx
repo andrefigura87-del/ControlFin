@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import * as LucideIcons from 'lucide-react';
 const {
-  Home, Tags, Wallet, CreditCard: CardIcon, Users, List, AlertTriangle, Activity, Check, LogOut
+  Home, Tags, Wallet, CreditCard: CardIcon, Users, List, AlertTriangle, Activity, Check, LogOut, Settings
 } = LucideIcons;
 
 import { AuthProvider, useAuth } from './core/AuthContext';
@@ -16,6 +16,7 @@ import CreditCard from './shared/components/CreditCard';
 import DashboardView from './features/dashboard/DashboardView';
 import TransactionsView from './features/transactions/TransactionsView';
 import FamilyView from './features/family/FamilyView';
+import SettingsView from './features/settings/SettingsView';
 
 function FinanceManager() {
   const { data, metrics, loading, utils, operations } = useFinance();
@@ -235,6 +236,7 @@ function FinanceManager() {
             { id: 'cards', icon: CardIcon, label: 'Cartões' },
             { id: 'categories', icon: Tags, label: 'Categorias' },
             { id: 'family', icon: Users, label: 'Família' },
+            { id: 'settings', icon: Settings, label: 'Configurações' },
           ].map(nav => (
             <button key={nav.id} onClick={() => setActiveTab(nav.id)} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${activeTab === nav.id ? 'bg-emerald-500/10 text-emerald-400 font-medium' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'} ${!isSidebarOpen && 'justify-center'}`}>
               <nav.icon size={20}/> {isSidebarOpen && <span>{nav.label}</span>}
@@ -316,11 +318,14 @@ function FinanceManager() {
              </div>
           )}
           {activeTab === 'family' && (
-             <FamilyView 
-                onAdd={() => { setEditingItem(null); setModalType('family'); }}
-                onEdit={(item) => { setEditingItem(item); setModalType('family'); }}
-                onDelete={(id, title) => { setDeleteContext({ id, collection: 'family', title }); setModalType('delete'); }}
-             />
+            <FamilyView 
+              onAdd={() => { setEditingItem(null); setModalType('family'); }}
+              onEdit={(item) => { setEditingItem(item); setModalType('family'); }}
+              onDelete={(id, title) => { setDeleteContext({ id, collection: 'family', title }); setModalType('delete'); }}
+            />
+          )}
+          {activeTab === 'settings' && (
+            <SettingsView />
           )}
         </div>
       </main>

@@ -29,6 +29,15 @@ export const InputBase = ({ className = '', ...props }) => (
   />
 );
 
+export const Select = ({ children, className = '', ...props }) => (
+  <select 
+    className={`w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer appearance-none ${className}`}
+    {...props}
+  >
+    {children}
+  </select>
+);
+
 export const SummaryCard = ({ title, value, trend = 'neutral', icon = 'wallet', className = '' }) => {
   const trends = {
     positive: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: TrendingUp },
@@ -110,7 +119,7 @@ export const TransactionTable = ({ transactions = [], emptyMessage = "Nenhuma tr
           {transactions.map((tx) => (
             <tr key={tx.id} className="hover:bg-gray-800/20 transition-colors group">
               <td className="py-4 pl-4 text-sm text-gray-400 whitespace-nowrap">
-                {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                {new Date(tx.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
               </td>
               <td className="py-4 text-sm font-medium text-gray-200">{tx.description}</td>
               <td className="py-4 text-sm text-gray-500">

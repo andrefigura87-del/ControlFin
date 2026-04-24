@@ -11,7 +11,7 @@ import ImportModal from './ImportModal';
 import { supabase } from '../../lib/supabase';
 import EmojiIcon from '../../shared/components/EmojiIcon';
 import { getCategoryConfig } from '../../shared/constants/categoryMap';
-import { Card, Button, InputBase, TransactionTable } from '../../shared/ui';
+import { Card, Button, InputBase, TransactionTable, Select } from '../../shared/ui';
 
 // Componente principal
 const TransactionsView = () => {
@@ -93,20 +93,37 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
       }
     }
 
-    // Filtrar duplicados (só se não for replace)
+    // 1. Filtrar duplicados contra o banco (só se não for replace)
+    // Usamos uma lógica de "chave composta" para ser mais preciso que apenas o FITID (que alguns bancos repetem)
     let validTxs = transactionsToImport;
     if (!replaceExisting) {
+      // Nota: Esta é uma verificação simples no client-side. O banco fará o check final via unique constraint.
       validTxs = transactionsToImport.filter(tx =>
-        !existingExternalIds.includes(tx.external_id)
+        !tx.external_id || !existingExternalIds.includes(tx.external_id)
       );
     }
 
-    if (validTxs.length === 0 && !replaceExisting) {
-      throw new Error("Todas as transações já foram importadas");
+    // 2. Dedup Interno do Lote: 
+    // Evita inserir a MESMA transação duas vezes se ela vier duplicada no próprio arquivo.
+    // Usamos uma chave composta (Data + Valor + Descrição + ID) para garantir unicidade real.
+    const uniqueBatch = [];
+    const seenBatchKeys = new Set();
+    
+    validTxs.forEach(tx => {
+      const compositeKey = `${tx.date}_${tx.amount}_${tx.description}_${tx.external_id || 'no-id'}`;
+      
+      if (!seenBatchKeys.has(compositeKey)) {
+        seenBatchKeys.add(compositeKey);
+        uniqueBatch.push(tx);
+      }
+    });
+
+    if (uniqueBatch.length === 0 && !replaceExisting) {
+      throw new Error("Todas as transações deste arquivo já parecem ter sido importadas anteriormente.");
     }
 
     // Preparar dados para inserção
-    const records = validTxs.map(tx => ({
+    const records = uniqueBatch.map(tx => ({
       user_id: userId,
       description: tx.description,
       amount: tx.amount,
@@ -120,21 +137,25 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
     }));
 
 
-    // UPSERT no banco (previne duplicatas via constraint UNIQUE)
+    // UPSERT no banco usando Chave Composta Robustecida
+    // Agora o conflito só ocorre se (user, carteira, data, valor, descrição e ID externo) forem idênticos.
     const { error } = await supabase
       .from("transactions")
-      .upsert(records, { onConflict: 'external_id', ignoreDuplicates: true })
+      .upsert(records, { 
+        onConflict: 'user_id,wallet_id,date,amount,description,external_id', 
+        ignoreDuplicates: true 
+      })
       .select();
 
     if (error) throw error;
-
 
     // Recarregar dados
     await operations.refresh();
 
     return {
-      imported: validTxs.length,
-      replaced: replaceExisting
+      imported: uniqueBatch.length,
+      replaced: replaceExisting,
+      totalDetected: transactionsToImport.length
     };
   };
 
@@ -249,40 +270,37 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Categoria</label>
-                <select 
+                <Select 
                   value={form.categoryId} 
                   onChange={e=>setForm({...form, categoryId: e.target.value})} 
-                  className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
                 >
-                  <option value="">Selecione uma categoria...</option>
+                  <option value="" className="bg-zinc-900">Selecione uma categoria...</option>
                   {data.categories.filter(c => c.type === form.type || form.type === 'Transferência').map(c => {
-                    const isIdentifier = c.icon && c.icon.length > 2;
-                    const emoji = isIdentifier ? getCategoryConfig(c.icon).emoji : (c.icon || '🏷️');
+                    const config = getCategoryConfig(c.icon);
                     return (
-                      <option key={c.id} value={c.id}>
-                        {emoji} {c.name}
+                      <option key={c.id} value={c.id} className="bg-zinc-900">
+                        {config.emoji} {c.name}
                       </option>
                     );
                   })}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Fonte de Pagamento</label>
-                <select 
+                <Select 
                   value={form.paymentMethod?.id} 
                   onChange={e => {
                     const account = data.accounts.find(a => a.id === e.target.value);
                     setForm({...form, paymentMethod: { type: account ? 'account' : 'card', id: e.target.value }});
                   }} 
-                  className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
                 >
-                  <optgroup label="Contas">
-                    {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
+                  <optgroup label="Contas" className="bg-zinc-900 text-zinc-500 text-xs">
+                    {data.accounts.map(a => <option key={a.id} value={a.id} className="bg-zinc-900 text-white">🏦 {a.name}</option>)}
                   </optgroup>
-                  <optgroup label="Cartões">
-                    {data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)}
+                  <optgroup label="Cartões" className="bg-zinc-900 text-zinc-500 text-xs">
+                    {data.cards.map(c => <option key={c.id} value={c.id} className="bg-zinc-900 text-white">💳 {c.name}</option>)}
                   </optgroup>
-                </select>
+                </Select>
               </div>
             </div>
           )}
@@ -380,10 +398,17 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
           <select 
             value={filterCategory} 
             onChange={e=>setFilterCategory(e.target.value)} 
-            className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm appearance-none"
           >
-            <option value="">Todas</option>
-            {data.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+            <option value="" className="bg-zinc-900">Todas as Categorias</option>
+            {data.categories.map(c => {
+              const config = getCategoryConfig(c.icon);
+              return (
+                <option key={c.id} value={c.id} className="bg-zinc-900">
+                  {config.emoji} {c.name}
+                </option>
+              );
+            })}
           </select>
         </div>
 
@@ -392,14 +417,14 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
           <select 
             value={filterSource} 
             onChange={e=>setFilterSource(e.target.value)} 
-            className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm appearance-none"
           >
-            <option value="">Todas</option>
-            <optgroup label="Contas">
-              {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
+            <option value="" className="bg-zinc-900">Todas as Fontes</option>
+            <optgroup label="Contas" className="bg-zinc-900 text-zinc-500 text-xs">
+              {data.accounts.map(a => <option key={a.id} value={a.id} className="bg-zinc-900 text-white">🏦 {a.name}</option>)}
             </optgroup>
-            <optgroup label="Cartões">
-              {data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)}
+            <optgroup label="Cartões" className="bg-zinc-900 text-zinc-500 text-xs">
+              {data.cards.map(c => <option key={c.id} value={c.id} className="bg-zinc-900 text-white">💳 {c.name}</option>)}
             </optgroup>
           </select>
         </div>

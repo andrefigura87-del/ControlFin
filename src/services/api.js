@@ -270,6 +270,11 @@ export const updateTransaction = (id, data) => {
 export const deleteTransaction = (id) => 
   execute(supabase.from('transactions').update({ deleted_at: new Date() }).eq('id', id));
 
+export const deleteAllTransactions = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  return execute(supabase.from('transactions').delete().eq('user_id', user.id));
+};
+
 
 /** ⚡ BATCH OPERATIONS */
 export const batchUpdateTransactions = async (operations) => {
