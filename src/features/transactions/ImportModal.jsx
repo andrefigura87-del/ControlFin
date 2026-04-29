@@ -16,8 +16,8 @@ export default function ImportModal({
   onClose, 
   categories = [], 
   wallets = [],
+  family = [],
   onImport,
-
 }) {
   const [step, setStep] = useState('upload'); // upload | preview | importing | done
   const [selectedWalletId, setSelectedWalletId] = useState('');
@@ -82,7 +82,7 @@ export default function ImportModal({
           category_id: suggestedCategory?.id || null,
           isAutoSuggested: !!suggestedCategory,
           userModified: false,
-          isValid: Boolean(suggestedCategory?.id) || tx.type === 'Transferência'
+          isValid: true // Transações OFX são válidas por padrão, categoria é opcional
         };
       });
 
@@ -101,8 +101,8 @@ export default function ImportModal({
         return { 
           ...tx, 
           category_id: categoryId,
-          userModified: true, // Marca que o usuário interferiu
-          isValid: (tx.type !== 'Transferência' && categoryId) || (tx.type === 'Transferência' && tx.destination_wallet_id)
+          userModified: true,
+          isValid: true
         };
       }
       return tx;
@@ -132,7 +132,7 @@ export default function ImportModal({
           updatedTx.isValid = Boolean(tx.destination_wallet_id);
         } else {
           updatedTx.destination_wallet_id = null;
-          updatedTx.isValid = Boolean(tx.category_id) && Boolean(selectedWalletId);
+          updatedTx.isValid = true;
         }
         return updatedTx;
       }
@@ -156,33 +156,32 @@ export default function ImportModal({
 
   const handleConfirmImport = async () => {
     // Validate all transactions (considera transferência também)
-    const validTransactions = transactions.filter(tx => 
-      selectedWalletId && (
-        (tx.type !== 'Transferência' && tx.category_id) ||
-        (tx.type === 'Transferência' && tx.destination_wallet_id)
-      )
-    );
+    const validTransactions = transactions.filter(tx => selectedWalletId);
 
     if (validTransactions.length === 0) {
-      setError('Atribua uma categoria para as transações destacadas em vermelho');
+      setError('Selecione uma carteira para realizar a importação');
       return;
     }
 
     setStep('importing');
 
     try {
+      // Encontrar membro principal (André/Titular)
+      const titular = family.find(f => f.relation === 'Titular' || f.name.toLowerCase().includes('meu'));
+
       // Prepare transactions for import
       const toImport = validTransactions.map(tx => ({
         description: tx.description,
         amount: tx.amount,
         type: tx.type,
         date: tx.date,
-        // Transferências usam destination_wallet_id, não category_id
         category_id: tx.type === 'Transferência' ? null : tx.category_id,
         wallet_id: selectedWalletId,
         destination_wallet_id: tx.type === 'Transferência' ? tx.destination_wallet_id : null,
         external_id: tx.fitid,
-        notes: tx.notes || ''
+        notes: tx.notes || '',
+        // Adicionar split 100% para o titular
+        splits: titular ? [{ memberId: titular.id, amount: tx.amount }] : []
       }));
 
       // Call import callback with replace flag
@@ -346,8 +345,7 @@ export default function ImportModal({
               <tr 
                 key={tx.id} 
                 className={`border-b border-zinc-800 ${
-(tx.type !== 'Transferência' && (!tx.category_id || !selectedWalletId)) || 
-                   (tx.type === 'Transferência' && !tx.destination_wallet_id) ? 'bg-red-900/10' : ''
+                   (tx.type === 'Transferência' && !tx.destination_wallet_id) ? 'bg-amber-900/10' : ''
                 }`}
               >
                 <td className="px-3 py-2 text-zinc-300 font-mono">
@@ -396,9 +394,7 @@ export default function ImportModal({
                       <Select
                         value={tx.category_id || ''}
                         onChange={(e) => handleCategoryChange(tx.id, e.target.value)}
-                        className={`!h-9 !py-1 text-xs ${
-                          !tx.category_id ? 'border-red-500/50 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : ''
-                        }`}
+                        className="!h-9 !py-1 text-xs"
                       >
                         <option value="" className="bg-zinc-900 text-zinc-400">Selecionar Categoria...</option>
                         {categories

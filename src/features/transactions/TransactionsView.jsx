@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  List, Search, Edit2, Trash2, CreditCard, Building, Activity, FileText, Upload, HelpCircle
+  List, Search, Edit2, Trash2, CreditCard, Building, Activity, FileText, Upload, HelpCircle, Users
 } from 'lucide-react';
 import { NumericFormat } from 'react-number-format';
 import { useFinance } from './useFinance';
@@ -11,7 +11,7 @@ import ImportModal from './ImportModal';
 import { supabase } from '../../lib/supabase';
 import EmojiIcon from '../../shared/components/EmojiIcon';
 import { getCategoryConfig } from '../../shared/constants/categoryMap';
-import { Card, Button, InputBase, TransactionTable, Select } from '../../shared/ui';
+import { Card, Button, InputBase, TransactionTable, Select, SplitWidget } from '../../shared/ui';
 
 // Componente principal
 const TransactionsView = () => {
@@ -171,8 +171,9 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
       description: '', amount: '', type: 'Despesa', date: todayISO,
       categoryId: data.categories.find(c => c.type === 'Despesa')?.id || data.categories[0]?.id || '',
       paymentMethod: { type: 'account', id: defaultWallet },
-      familyId: data.family[0]?.id || '', isPaid: true, isRecurring: false, notes: '',
-      destinationAccountId: '', isInstallment: false, installmentsCount: 2
+      isPaid: true, isRecurring: false, notes: '',
+      destinationAccountId: '', isInstallment: false, installmentsCount: 2,
+      splits: item?.splits || []
     });
 
     // Lógica para Tipo Reserva: Forçar categoria e limpar destino se não for reserva
@@ -186,13 +187,26 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
     }, [form.type, form.categoryId]);
 
     const handleLocalSave = async () => {
-      let finalForm = { ...form };
+      // Remover campo legado familyId para evitar payload sujo
+      const { familyId, ...cleanForm } = form;
+      let finalForm = { ...cleanForm };
+
       if (form.type === 'Transferência') {
-        finalForm.categoryId = null; // Transferências puras não tem categoria
+        finalForm.categoryId = null;
       } else if (form.type === 'Pagamento Fatura') {
         const ccCategory = data.categories.find(c => c.name.toLowerCase().includes('cartão') || c.name.toLowerCase().includes('cartao'));
         if (ccCategory) finalForm.categoryId = ccCategory.id;
       }
+
+      // Fallback de Segurança: Garantir que sempre existam splits (Prevenção de Órfãos)
+      const hasValidSplits = finalForm.splits?.some(s => (parseFloat(s.amount) || 0) > 0);
+      if (!hasValidSplits) {
+        const titular = data.family.find(f => f.relation === 'Titular' || f.name.toLowerCase().includes('meu'));
+        if (titular) {
+          finalForm.splits = [{ memberId: titular.id, amount: form.amount || 0 }];
+        }
+      }
+
       await saveItem(finalForm, 'transactions');
       setModalType(null);
       setEditingItem(null);
@@ -200,21 +214,21 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
 
     return (
       <div className="space-y-4">
-        <div className="flex flex-wrap gap-1.5 p-1 bg-zinc-950/50 rounded-xl border border-zinc-900">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 p-1.5 bg-zinc-950/80 rounded-2xl border border-zinc-800/50 shadow-inner">
           {[
-            { id: 'Despesa', label: 'Despesa', color: 'bg-rose-500/15 text-rose-400 border border-rose-500/20' },
-            { id: 'Receita', label: 'Receita', color: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' },
-            { id: 'Transferência', label: 'Transferência', color: 'bg-zinc-800 text-zinc-300 border border-zinc-700' },
-            { id: 'Pagamento Fatura', label: 'Pagar Fatura', color: 'bg-purple-500/15 text-purple-400 border border-purple-500/20' },
-            { id: 'Reserva', label: 'Reserva', color: 'bg-blue-500/15 text-blue-400 border border-blue-500/20' }
+            { id: 'Despesa', label: 'Despesa', active: 'bg-rose-500/20 text-rose-400 border-rose-500/30' },
+            { id: 'Receita', label: 'Receita', active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+            { id: 'Transferência', label: 'Transf.', active: 'bg-zinc-800 text-zinc-100 border-zinc-700' },
+            { id: 'Pagamento Fatura', label: 'Fatura', active: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+            { id: 'Reserva', label: 'Reserva', active: 'bg-blue-500/20 text-blue-400 border-blue-500/30' }
           ].map(t => (
             <button 
               key={t.id} 
               onClick={()=>setForm({...form, type: t.id})} 
-              className={`flex-1 min-w-[80px] sm:min-w-[100px] px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+              className={`px-2 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border ${
                 form.type === t.id 
-                  ? t.color + ' shadow-lg' 
-                  : 'bg-transparent text-zinc-500 border border-transparent hover:bg-zinc-900 hover:text-zinc-300'
+                  ? `${t.active} shadow-lg scale-[1.02]` 
+                  : 'bg-transparent text-zinc-500 border-transparent hover:text-zinc-400 hover:bg-zinc-900/40'
               }`}
             >
               {t.label}
@@ -241,29 +255,27 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Origem (Saída)</label>
-                <select 
+                <Select 
                   value={form.paymentMethod?.id} 
                   onChange={e => setForm({...form, paymentMethod: { type: 'account', id: e.target.value }})}
-                  className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
                 >
-                  <option value="">Selecione a Origem</option>
-                  {data.accounts.map(a => <option key={a.id} value={a.id}>🏦 {a.name}</option>)}
-                </select>
+                  <option value="" className="bg-zinc-900">Selecione a Origem</option>
+                  {data.accounts.map(a => <option key={a.id} value={a.id} className="bg-zinc-900">🏦 {a.name}</option>)}
+                </Select>
               </div>
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Destino ({form.type === 'Pagamento Fatura' ? 'Cartão' : 'Conta'})</label>
-                <select 
+                <Select 
                   value={form.destinationAccountId} 
                   onChange={e => setForm({...form, destinationAccountId: e.target.value})}
-                  className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
                 >
-                  <option value="">Selecione o Destino</option>
+                  <option value="" className="bg-zinc-900">Selecione o Destino</option>
                   {form.type === 'Pagamento Fatura' ? (
-                    data.cards.map(c => <option key={c.id} value={c.id}>💳 {c.name}</option>)
+                    data.cards.map(c => <option key={c.id} value={c.id} className="bg-zinc-900">💳 {c.name}</option>)
                   ) : (
-                    data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id}>🏦 {a.name}</option>)
+                    data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id} className="bg-zinc-900">🏦 {a.name}</option>)
                   )}
-                </select>
+                </Select>
               </div>
             </div>
           ) : (
@@ -306,18 +318,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs text-zinc-400 mb-1">Familiar</label>
-            <select 
-              value={form.familyId} 
-              onChange={e=>setForm({...form, familyId: e.target.value})} 
-              className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm cursor-pointer"
-            >
-              <option value="">Selecione o Membro</option>
-              {data.family.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
-          </div>
+        <div className="grid grid-cols-1 gap-4">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-3 mt-5">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.isPaid} onChange={e=>setForm({...form, isPaid: e.target.checked})} className="accent-emerald-500 w-4 h-4" />
@@ -352,6 +353,17 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
             placeholder="Detalhes adicionais..."
           />
         </div>
+
+        <SplitWidget 
+          totalAmount={form.amount || 0}
+          members={data.family}
+          splits={form.splits}
+          onChange={(s) => setForm({ ...form, splits: s })}
+          subtitle={
+            form.type === 'Despesa' || form.type === 'Pagamento Fatura' ? "DISTRIBUIÇÃO DE CUSTOS" :
+            form.type === 'Receita' ? "DIVISÃO DE RECEITA" : "PROPRIEDADE DA TRANSAÇÃO"
+          }
+        />
 
         <Button variant="solid" onClick={handleLocalSave} disabled={!form.amount} className="w-full py-3 text-sm">
           Salvar Transação
@@ -476,7 +488,14 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
               category: cat ? (
                 <div className="flex items-center gap-2">
                   <EmojiIcon emoji={cat.icon || '📌'} color={cat.color || 'zinc'} size="sm" />
-                  <span className="text-zinc-300 font-medium">{cat.name}</span>
+                  <div className="flex flex-col">
+                    <span className="text-zinc-300 font-medium leading-none">{cat.name}</span>
+                    {t.splits?.length > 1 && (
+                      <span className="text-[10px] text-amber-500 font-bold flex items-center gap-1 mt-1">
+                        <Users size={10} /> RATEADO
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : 'Outros',
               raw: t
@@ -500,6 +519,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
         onClose={() => setImportModalOpen(false)}
         categories={data.categories}
         wallets={data.accounts}
+        family={data.family}
         existingExternalIds={existingExternalIds}
         onImport={handleImportTransactions}
       />

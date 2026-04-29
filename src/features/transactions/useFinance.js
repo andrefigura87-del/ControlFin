@@ -12,6 +12,7 @@ export function useFinance() {
     transactions: []
   });
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('global'); // 'global' | 'personal'
 
   // Inicialização (HOTFIX: Impedir loop infinito e carregar apenas quando logado)
   useEffect(() => {
@@ -48,23 +49,33 @@ export function useFinance() {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
+    // Enriquecimento com Splits e Filtro de Visão
+    const personalMember = data.family.find(m => m.relation === 'Titular' || m.name.toLowerCase().includes('meu'));
+    
+    let processedTransactions = data.transactions;
+    if (viewMode === 'personal' && personalMember) {
+      processedTransactions = data.transactions.map(t => {
+        const mySplit = t.splits?.find(s => s.memberId === personalMember.id);
+        if (mySplit) return { ...t, amount: mySplit.amount };
+        return null; // Se não tem split pra mim, não conta na visão pessoal
+      }).filter(Boolean);
+    }
+
     // Filtro do Mês Atual
-    const monthTransactions = data.transactions.filter(t => {
+    const monthTransactions = processedTransactions.filter(t => {
       const d = new Date(t.date + 'T00:00:00');
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
 
     // Cálculo de saldo por conta (Enriquecimento)
     const enrichedAccounts = data.accounts.map(a => {
-      const txs = data.transactions.filter(t => t.isPaid !== false);
+      const txs = processedTransactions.filter(t => t.isPaid !== false);
       
-      // Entradas: Receitas na conta OU Reservas/Transferências destinadas a esta conta
       const credits = txs.filter(t => 
         (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && t.type === 'Receita') ||
         ((t.type === 'Reserva' || t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.destinationAccountId === a.id)
       ).reduce((sum, t) => sum + t.amount, 0);
 
-      // Saídas: Despesas na conta OU Reservas/Transferências saindo desta conta
       const debits = txs.filter(t => 
         (t.paymentMethod?.type === 'account' && t.paymentMethod?.id === a.id && (t.type === 'Despesa' || t.type === 'Reserva' || t.type === 'Transferência' || t.type === 'Pagamento Fatura'))
       ).reduce((sum, t) => sum + t.amount, 0);
@@ -72,57 +83,40 @@ export function useFinance() {
       return { ...a, currentBalance: (a.balance || 0) + credits - debits };
     });
 
-    // Cálculo de gastos e limite de cartões (Enriquecimento)
     const enrichedCards = data.cards.map(c => {
-      const cardTransactions = data.transactions.filter(t => t.paymentMethod?.type === 'card' && t.paymentMethod?.id === c.id && t.type === 'Despesa');
+      const cardTransactions = processedTransactions.filter(t => t.paymentMethod?.type === 'card' && t.paymentMethod?.id === c.id && t.type === 'Despesa');
       
-      // Pagamentos efetuados para repor o limite do cartão.
-      const cardPayments = data.transactions.filter(t => 
+      const cardPayments = processedTransactions.filter(t => 
         ((t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.destinationAccountId === c.id) ||
-        // Fallback: despesas marcadas na categoria Cartão de Crédito que não tinham destino explícito 
         (t.type === 'Despesa' && data.categories.find(cat => cat.id === t.categoryId)?.name.toLowerCase().includes('cartão') && !t.destinationAccountId)
       ).reduce((sum, t) => sum + t.amount, 0);
 
-      // Limite Comprometido Real de longo prazo: (Total Histórico Gasto) - (Total Histórico Pago)
       const totalUsedLimit = cardTransactions
-        .filter(t => {
-          const isPastOrToday = t.date <= todayISO;
-          const isInstallment = t.description.includes('(') && t.description.includes('/');
-          return isPastOrToday || isInstallment;
-        })
+        .filter(t => (t.date <= todayISO || (t.description.includes('(') && t.description.includes('/'))))
         .reduce((sum, t) => sum + t.amount, 0) - cardPayments;
 
-      // Nova Matemática da Fatura: Soma TUDO que foi gasto na história até a data de fechamento do ciclo atual
       const historicalAndCurrentExpenses = cardTransactions
         .filter(t => {
-          const d = new Date(t.date + 'T12:00:00'); // Evitar erro de fuso
+          const d = new Date(t.date + 'T12:00:00');
           const cd = c.closingDay || 31; 
-          
           const tMonth = d.getMonth();
           const tYear = d.getFullYear();
           const tDate = d.getDate();
           
           let isFutureCycle = false;
-          // Se for ano seguinte, é fatura futura
           if (tYear > currentYear) isFutureCycle = true;
-          // Se for o mesmo ano e mês seguinte, é fatura futura
           else if (tYear === currentYear && tMonth > currentMonth) isFutureCycle = true;
-          // Se for o mesmo mês/ano, mas a data já ultrapassou o fechamento deste mês, também cai na fatura futura
           else if (tYear === currentYear && tMonth === currentMonth && tDate > cd) isFutureCycle = true;
           
           return !isFutureCycle;
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // Fatura atual é: (Tudo que você já consumiu na história até este ciclo) - (Tudo que você já pagou na história inteira)
       const currentInvoice = Math.max(0, historicalAndCurrentExpenses - cardPayments);
-
       return { ...c, currentInvoice, totalUsedLimit, availableLimit: (c.limit || 0) - totalUsedLimit };
     });
 
     const totalBalance = enrichedAccounts.reduce((acc, a) => acc + a.currentBalance, 0);
-
-    // Métricas do Mês (Considerando Efetivado OU <= Hoje)
     const filterRule = (t) => t.isPaid !== false || t.date <= todayISO;
     const isTransfOrPag = (t) => t.type === 'Transferência' || t.type === 'Pagamento Fatura';
     
@@ -130,23 +124,19 @@ export function useFinance() {
     const monthDespesas = monthTransactions.filter(t => t.type === 'Despesa' && !isTransfOrPag(t) && filterRule(t)).reduce((a, t) => a + t.amount, 0);
     const monthReservas = monthTransactions.filter(t => t.type === 'Reserva' && !isTransfOrPag(t) && filterRule(t)).reduce((a, t) => a + t.amount, 0);
 
-    // Despesas por Categoria
     const expensesByCategory = data.categories.filter(c => c.type === 'Despesa').map(c => {
       const total = monthTransactions.filter(t => t.categoryId === c.id && t.type === 'Despesa' && t.date <= todayISO).reduce((a, t) => a + t.amount, 0);
       return { ...c, total };
     }).filter(c => c.total > 0).sort((a,b) => b.total - a.total);
 
     const maxExpense = expensesByCategory.length ? Math.max(...expensesByCategory.map(c => c.total)) : 1;
-
-    // RECHARTS DATA PREP
     const baseAccountBalance = data.accounts.reduce((acc, a) => acc + (a.balance || 0), 0);
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const chartData = [];
     let runningReal = baseAccountBalance;
     let runningProjected = baseAccountBalance;
 
-    // Ajuste inicial por transações passadas
-    data.transactions.filter(t => new Date(t.date + 'T00:00:00') < new Date(currentYear, currentMonth, 1))
+    processedTransactions.filter(t => new Date(t.date + 'T00:00:00') < new Date(currentYear, currentMonth, 1))
       .forEach(t => {
         const val = t.type === 'Receita' ? t.amount : -t.amount;
         if (t.isPaid !== false) runningReal += val;
@@ -177,8 +167,14 @@ export function useFinance() {
       todayISO,
       chartData,
       monthTransactions,
+      allMonthTransactions: data.transactions.filter(t => {
+        const d = new Date(t.date + 'T00:00:00');
+        const now = new Date();
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }),
       enrichedAccounts,
-      enrichedCards
+      enrichedCards,
+      viewMode
     };
   }, [data, todayISO]);
 
@@ -199,20 +195,19 @@ export function useFinance() {
 
       if (item.id) {
         result = await methods.update(item.id, item);
+        if (item.splits) {
+          await api.updateSplitsForTransaction(item.id, item.splits);
+        }
       } else {
-        // eslint-disable-next-line no-unused-vars
         const { id, ...payload } = item;
         result = await methods.create(payload);
+        if (item.splits) {
+          await api.updateSplitsForTransaction(result.id, item.splits);
+        }
       }
       
-      setData(prev => {
-        const list = prev[collection];
-        const isUpdate = list.some(i => i.id === result.id);
-        return {
-          ...prev,
-          [collection]: isUpdate ? list.map(i => i.id === result.id ? result : i) : [result, ...list]
-        };
-      });
+      // Refresh total data after save to ensure splits are up to date
+      await refresh();
       return result;
     } catch (err) {
       console.error("Erro ao salvar item", err);
@@ -264,6 +259,7 @@ export function useFinance() {
       deleteItem, 
       batchUpdate: api.batchUpdateTransactions, 
       clearAllTransactions: api.deleteAllTransactions,
+      setViewMode,
       refresh 
     }
   };

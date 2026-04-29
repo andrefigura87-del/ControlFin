@@ -82,7 +82,8 @@ const sanitizePayload = (tableName, data) => {
     categories: ['name', 'icon', 'color', 'type'],
     wallets: ['name', 'balance', 'color', 'type'],
     cards: ['name', 'limit_amount', 'closing_day', 'due_day', 'digits', 'color', 'flag'],
-    family_members: ['name', 'relation'],
+    family_members: ['name', 'relation', 'icon', 'color'],
+    transaction_splits: ['transaction_id', 'member_id', 'amount'],
     transactions: [
       'description', 'amount', 'date', 'type', 'is_paid', 'is_recurring', 
       'category_id', 'family_member_id', 'wallet_id', 'card_id', 
@@ -204,8 +205,16 @@ export const deleteFamily = (id) =>
 
 /** 💸 TRANSACTIONS */
 export const getTransactions = () => 
-  execute(supabase.from('transactions').select('*').is('deleted_at', null))
-    .then(rows => rows.map(toCamel));
+  execute(supabase.from('transactions').select('*, transaction_splits(*)').is('deleted_at', null))
+    .then(rows => rows.map(row => {
+      const tx = toCamel(row);
+      tx.splits = row.transaction_splits?.map(s => ({
+        id: s.id,
+        memberId: s.member_id,
+        amount: s.amount
+      })) || [];
+      return tx;
+    }));
 
 export const createTransaction = async (data) => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -302,4 +311,23 @@ export const batchUpdateTransactions = async (operations) => {
   const results = await Promise.all(promises);
   results.forEach(r => { if (r.error) throw new Error(r.error.message); });
   return results.map(r => r.data ? toCamel(r.data[0]) : null);
+};
+
+/** ✂️ SPLITS */
+export const updateSplitsForTransaction = async (transactionId, splits) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // 1. Remover rateios antigos
+  await supabase.from('transaction_splits').delete().eq('transaction_id', transactionId);
+  
+  // 2. Inserir novos
+  if (splits && splits.length > 0) {
+    const payloads = splits.map(s => ({
+      transaction_id: transactionId,
+      member_id: s.memberId || s.member_id,
+      amount: s.amount,
+      user_id: user.id
+    }));
+    await execute(supabase.from('transaction_splits').insert(payloads));
+  }
 };
