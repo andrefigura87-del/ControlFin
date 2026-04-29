@@ -1,34 +1,74 @@
-import React, { useMemo } from 'react';
-import { Users } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFinance } from '../transactions/useFinance';
 import ListHeader from '../../shared/components/ListHeader';
+import { Button } from '../../shared/ui';
 
 const FamilyView = ({ onEdit, onAdd }) => {
-  const { data, metrics, utils } = useFinance();
+  const { data, utils } = useFinance();
   const { formatMoney } = utils;
-  const { todayISO } = metrics;
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const handlePrevMonth = () => {
+    setSelectedDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setSelectedDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
 
   const familyStats = useMemo(() => {
+    const targetMonth = selectedDate.getMonth();
+    const targetYear = selectedDate.getFullYear();
+
     return data.family.map(member => {
-      const spending = data.transactions
-        .filter(t => 
-          t.familyId === member.id && 
-          t.type === 'Despesa' && 
-          (t.isPaid !== false || t.date <= todayISO)
-        )
-        .reduce((sum, t) => sum + t.amount, 0);
+      // Filtrar transações baseadas na data selecionada no seletor temporal
+      const spending = (data.transactions || [])
+        .filter(t => {
+          const d = new Date(t.date + 'T00:00:00');
+          const isTargetMonth = d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+          return t.type !== 'Receita' && isTargetMonth;
+        })
+        .reduce((sum, t) => {
+          const split = t.splits?.find(s => String(s.memberId) === String(member.id));
+          return sum + (split ? parseFloat(split.amount) : 0);
+        }, 0);
       
       return { ...member, spending };
     });
-  }, [data.family, data.transactions, todayISO]);
+  }, [data.family, data.transactions, selectedDate]);
+
+  const monthLabel = selectedDate.toLocaleString('pt-BR', { month: 'long' }).toUpperCase();
+  const yearLabel = selectedDate.getFullYear();
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <ListHeader 
-        title="Família" 
-        icon={Users} 
-        onAdd={onAdd} 
-      />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <ListHeader 
+          title="Família" 
+          icon={Users} 
+          onAdd={onAdd} 
+          className="!mb-0"
+        />
+
+        {/* Seletor de Mês (Navegação Temporal) */}
+        <div className="flex items-center gap-1 bg-zinc-900/50 border border-zinc-800 p-1 rounded-2xl backdrop-blur-sm self-start md:self-center">
+          <Button variant="ghost" onClick={handlePrevMonth} className="!p-2 hover:bg-zinc-800 rounded-xl">
+            <ChevronLeft size={18} className="text-zinc-400" />
+          </Button>
+          
+          <div className="px-4 py-2 min-w-[160px] text-center">
+            <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase block leading-none mb-1">Período</span>
+            <span className="text-sm font-bold text-zinc-100 tracking-wider uppercase">
+              {monthLabel} <span className="text-emerald-500/50">{yearLabel}</span>
+            </span>
+          </div>
+
+          <Button variant="ghost" onClick={handleNextMonth} className="!p-2 hover:bg-zinc-800 rounded-xl">
+            <ChevronRight size={18} className="text-zinc-400" />
+          </Button>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {familyStats.map(f => (
