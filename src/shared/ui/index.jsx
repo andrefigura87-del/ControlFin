@@ -164,3 +164,6 @@ export const TransactionTable = ({ transactions = [], emptyMessage = "Nenhuma tr
     </div>
   );
 };
+
+import SplitWidget from './SplitWidget';
+export { SplitWidget };
