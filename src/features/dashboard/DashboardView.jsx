@@ -1,11 +1,13 @@
 import React from 'react';
 import { useFinance } from '../transactions/useFinance';
 import { Card, Button, InputBase, SummaryCard, CreditCardWidget, TransactionTable } from '../../shared/ui';
+import CategoryExpenseChart from './CategoryExpenseChart';
 
 const DashboardView = () => {
-  const { metrics, utils, data } = useFinance();
+  const { metrics, utils, data, operations } = useFinance();
   const { formatMoney } = utils;
-  const { totalBalance, monthReceitas, monthDespesas, enrichedCards, monthTransactions } = metrics;
+  const { setViewMode } = operations;
+  const { totalBalance, monthReceitas, monthDespesas, enrichedCards, monthTransactions, viewMode } = metrics;
 
   // Transform transactions to match the UI component signature
   const recentTransactions = monthTransactions
@@ -30,7 +32,23 @@ const DashboardView = () => {
           <h1 className="text-3xl font-semibold text-white tracking-tight">Visão Geral</h1>
           <p className="text-gray-400 mt-1">Bem-vindo de volta! Acompanhe suas finanças.</p>
         </div>
-        <Button variant="solid">Importar OFX</Button>
+        
+        <div className="flex gap-2 p-1 bg-zinc-900 border border-zinc-800 rounded-2xl">
+          <Button 
+            variant={viewMode === 'global' ? 'solid' : 'ghost'} 
+            onClick={() => setViewMode('global')}
+            className={`!px-4 !py-1.5 !text-xs !rounded-xl !h-auto transition-all duration-300 ${viewMode === 'global' ? 'shadow-lg shadow-emerald-500/20' : 'text-zinc-500'}`}
+          >
+            Visão Global
+          </Button>
+          <Button 
+            variant={viewMode === 'personal' ? 'solid' : 'ghost'} 
+            onClick={() => setViewMode('personal')}
+            className={`!px-4 !py-1.5 !text-xs !rounded-xl !h-auto transition-all duration-300 ${viewMode === 'personal' ? 'shadow-lg shadow-emerald-500/20' : 'text-zinc-500'}`}
+          >
+            Minha Parte
+          </Button>
+        </div>
       </div>
 
       {/* 2. Top Grid (Resumo Financeiro) */}
@@ -64,8 +82,19 @@ const DashboardView = () => {
           className="lg:col-span-2 animate-slide-up-fade" 
           style={{ animationFillMode: 'backwards', animationDelay: '400ms' }}
         >
-          <Card className="min-h-[220px] h-full flex items-center justify-center text-gray-500 border-dashed">
-            Gráfico de Fluxo de Caixa em Breve
+          <Card className="h-full flex flex-col p-6 overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-widest">Distribuição por Categoria</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-tighter">Real-time</span>
+              </div>
+            </div>
+            
+            <CategoryExpenseChart 
+              transactions={monthTransactions} 
+              categories={data.categories} 
+            />
           </Card>
         </div>
         <div 
