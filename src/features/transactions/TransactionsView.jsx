@@ -192,7 +192,7 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
       let finalForm = { ...cleanForm };
 
       if (form.type === 'Transferência') {
-        finalForm.categoryId = null;
+        // Permitir categoria para transferência se o usuário selecionar
       } else if (form.type === 'Pagamento Fatura') {
         const ccCategory = data.categories.find(c => c.name.toLowerCase().includes('cartão') || c.name.toLowerCase().includes('cartao'));
         if (ccCategory) finalForm.categoryId = ccCategory.id;
@@ -252,34 +252,58 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
         
         <div className="grid grid-cols-1 gap-4">
           {(form.type === 'Reserva' || form.type === 'Transferência' || form.type === 'Pagamento Fatura') ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1">Origem (Saída)</label>
-                <Select 
-                  value={form.paymentMethod?.id} 
-                  onChange={e => setForm({...form, paymentMethod: { type: 'account', id: e.target.value }})}
-                >
-                  <option value="" className="bg-zinc-900">Selecione a Origem</option>
-                  {data.accounts.map(a => <option key={a.id} value={a.id} className="bg-zinc-900">🏦 {a.name}</option>)}
-                </Select>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-zinc-400 mb-1">Origem (Saída)</label>
+                  <Select 
+                    value={form.paymentMethod?.id} 
+                    onChange={e => setForm({...form, paymentMethod: { type: 'account', id: e.target.value }})}
+                  >
+                    <option value="" className="bg-zinc-900">Selecione a Origem</option>
+                    {data.accounts.map(a => <option key={a.id} value={a.id} className="bg-zinc-900">🏦 {a.name}</option>)}
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-xs text-zinc-400 mb-1">Destino ({form.type === 'Pagamento Fatura' ? 'Cartão' : 'Conta'})</label>
+                  <Select 
+                    value={form.destinationAccountId} 
+                    onChange={e => setForm({...form, destinationAccountId: e.target.value})}
+                  >
+                    <option value="" className="bg-zinc-900">Selecione o Destino</option>
+                    {form.type === 'Pagamento Fatura' ? (
+                      data.cards.map(c => <option key={c.id} value={c.id} className="bg-zinc-900">💳 {c.name}</option>)
+                    ) : (
+                      data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id} className="bg-zinc-900">🏦 {a.name}</option>)
+                    )}
+                  </Select>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1">Destino ({form.type === 'Pagamento Fatura' ? 'Cartão' : 'Conta'})</label>
-                <Select 
-                  value={form.destinationAccountId} 
-                  onChange={e => setForm({...form, destinationAccountId: e.target.value})}
-                >
-                  <option value="" className="bg-zinc-900">Selecione o Destino</option>
-                  {form.type === 'Pagamento Fatura' ? (
-                    data.cards.map(c => <option key={c.id} value={c.id} className="bg-zinc-900">💳 {c.name}</option>)
-                  ) : (
-                    data.accounts.map(a => <option key={a.id} value={a.id} disabled={a.id === form.paymentMethod?.id} className="bg-zinc-900">🏦 {a.name}</option>)
-                  )}
-                </Select>
-              </div>
+              
+              {/* Adicionar Categoria para Transferências e Reservas */}
+              {form.type !== 'Pagamento Fatura' && (
+                <div>
+                  <label className="block text-xs text-zinc-400 mb-1">Categoria</label>
+                  <Select 
+                    value={form.categoryId} 
+                    onChange={e=>setForm({...form, categoryId: e.target.value})} 
+                  >
+                    <option value="" className="bg-zinc-900">Selecione uma categoria...</option>
+                    {data.categories.filter(c => c.type === form.type).map(c => {
+                      const config = getCategoryConfig(c.icon);
+                      return (
+                        <option key={c.id} value={c.id} className="bg-zinc-900">
+                          {config.emoji} {c.name}
+                        </option>
+                      );
+                    })}
+                  </Select>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-zinc-400 mb-1">Categoria</label>
                 <Select 
@@ -298,23 +322,39 @@ const handleImportTransactions = async (transactionsToImport, options = {}) => {
                 </Select>
               </div>
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">Fonte de Pagamento</label>
+                <label className="block text-xs text-zinc-400 mb-1">Forma de Pagamento</label>
                 <Select 
-                  value={form.paymentMethod?.id} 
+                  value={form.paymentMethod?.type === 'card' ? form.paymentMethod.id : 'account'} 
                   onChange={e => {
-                    const account = data.accounts.find(a => a.id === e.target.value);
-                    setForm({...form, paymentMethod: { type: account ? 'account' : 'card', id: e.target.value }});
+                    if (e.target.value === 'account') {
+                      setForm({...form, paymentMethod: { type: 'account', id: data.accounts[0]?.id }});
+                    } else {
+                      setForm({...form, paymentMethod: { type: 'card', id: e.target.value }});
+                    }
                   }} 
                 >
-                  <optgroup label="Contas" className="bg-zinc-900 text-zinc-500 text-xs">
-                    {data.accounts.map(a => <option key={a.id} value={a.id} className="bg-zinc-900 text-white">🏦 {a.name}</option>)}
-                  </optgroup>
-                  <optgroup label="Cartões" className="bg-zinc-900 text-zinc-500 text-xs">
-                    {data.cards.map(c => <option key={c.id} value={c.id} className="bg-zinc-900 text-white">💳 {c.name}</option>)}
-                  </optgroup>
+                  <option value="account" className="bg-zinc-900 text-white">🏦 Conta Corrente / Débito</option>
+                  {data.cards.length > 0 && (
+                    <optgroup label="Cartões de Crédito" className="bg-zinc-900 text-zinc-500 text-xs">
+                      {data.cards.map(c => <option key={c.id} value={c.id} className="bg-zinc-900 text-white">💳 {c.name}</option>)}
+                    </optgroup>
+                  )}
                 </Select>
               </div>
             </div>
+            
+            {form.type === 'Despesa' && form.paymentMethod?.type === 'account' && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-xs text-zinc-400 mb-1">Conta de Origem</label>
+                <Select 
+                  value={form.paymentMethod?.id} 
+                  onChange={e => setForm({...form, paymentMethod: { type: 'account', id: e.target.value }})} 
+                >
+                  {data.accounts.map(a => <option key={a.id} value={a.id} className="bg-zinc-900 text-white">🏦 {a.name}</option>)}
+                </Select>
+              </div>
+            )}
+            </>
           )}
         </div>
 

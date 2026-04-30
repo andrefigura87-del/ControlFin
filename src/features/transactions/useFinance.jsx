@@ -1,8 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import * as api from '../../services/api';
 import { useAuth } from '../../core/AuthContext';
 
-export function useFinance() {
+const FinanceContext = createContext(null);
+
+export function FinanceProvider({ children }) {
   const { user } = useAuth();
   const [data, setData] = useState({
     categories: [],
@@ -84,21 +86,25 @@ export function useFinance() {
     });
 
     const enrichedCards = data.cards.map(c => {
-      const cardTransactions = processedTransactions.filter(t => t.paymentMethod?.type === 'card' && t.paymentMethod?.id === c.id && t.type === 'Despesa');
+      // REGRA CRÍTICA: Cartões ignoram viewMode e splits familiares. Usar data.transactions (Global).
+      const cardTransactions = data.transactions.filter(t => 
+        (t.paymentMethod?.type === 'card' && String(t.paymentMethod?.id) === String(c.id)) && 
+        t.type === 'Despesa'
+      );
       
-      const cardPayments = processedTransactions.filter(t => 
-        ((t.type === 'Transferência' || t.type === 'Pagamento Fatura') && t.destinationAccountId === c.id) ||
+      const cardPayments = data.transactions.filter(t => 
+        ((t.type === 'Transferência' || t.type === 'Pagamento Fatura') && String(t.destinationAccountId) === String(c.id)) ||
         (t.type === 'Despesa' && data.categories.find(cat => cat.id === t.categoryId)?.name.toLowerCase().includes('cartão') && !t.destinationAccountId)
-      ).reduce((sum, t) => sum + t.amount, 0);
+      ).reduce((sum, t) => sum + (parseFloat(t.originalAmount || t.amount) || 0), 0);
 
       const totalUsedLimit = cardTransactions
         .filter(t => (t.date <= todayISO || (t.description.includes('(') && t.description.includes('/'))))
-        .reduce((sum, t) => sum + t.amount, 0) - cardPayments;
+        .reduce((sum, t) => sum + (parseFloat(t.originalAmount || t.amount) || 0), 0) - cardPayments;
 
       const historicalAndCurrentExpenses = cardTransactions
         .filter(t => {
           const d = new Date(t.date + 'T12:00:00');
-          const cd = c.closingDay || 31; 
+          const cd = c.closingDay || 10; 
           const tMonth = d.getMonth();
           const tYear = d.getFullYear();
           const tDate = d.getDate();
@@ -110,7 +116,7 @@ export function useFinance() {
           
           return !isFutureCycle;
         })
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + (parseFloat(t.originalAmount || t.amount) || 0), 0);
 
       const currentInvoice = Math.max(0, historicalAndCurrentExpenses - cardPayments);
       return { ...c, currentInvoice, totalUsedLimit, availableLimit: (c.limit || 0) - totalUsedLimit };
@@ -248,7 +254,7 @@ export function useFinance() {
     }
   };
 
-  return {
+  const value = {
     data,
     setData,
     metrics,
@@ -263,4 +269,14 @@ export function useFinance() {
       refresh 
     }
   };
+
+  return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
+}
+
+export function useFinance() {
+  const context = useContext(FinanceContext);
+  if (!context) {
+    throw new Error('useFinance must be used within a FinanceProvider');
+  }
+  return context;
 }

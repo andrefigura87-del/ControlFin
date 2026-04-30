@@ -29,15 +29,16 @@ const toCamel = (obj) => {
     limit: obj.limit_amount,
     closingDay: obj.closing_day,
     dueDay: obj.due_day,
+    creditCardId: obj.credit_card_id,
     // Mapeamento especial para paymentMethod esperado pelo hook useFinance
-    paymentMethod: obj.card_id 
-      ? { type: 'card', id: obj.card_id } 
+    paymentMethod: obj.credit_card_id 
+      ? { type: 'card', id: obj.credit_card_id } 
       : { type: 'account', id: obj.wallet_id }
   };
 
   // Limpeza de campos snake_case internos do Supabase
   const keysToDelete = [
-    'category_id', 'family_member_id', 'wallet_id', 'card_id', 
+    'category_id', 'family_member_id', 'wallet_id', 'card_id', 'credit_card_id',
     'is_paid', 'is_recurring', 'group_id', 'destination_wallet_id', 
     'limit_amount', 'closing_day', 'due_day'
   ];
@@ -63,13 +64,13 @@ const toSnake = (obj) => {
     closing_day: obj.closingDay,
     due_day: obj.dueDay,
     wallet_id: paymentMethod?.type === 'account' ? paymentMethod.id : null,
-    card_id: paymentMethod?.type === 'card' ? paymentMethod.id : null
+    credit_card_id: paymentMethod?.type === 'card' ? paymentMethod.id : (obj.creditCardId || null)
   };
 
   // Remove campos camelCase originais
   const camelKeys = [
     'categoryId', 'familyId', 'isPaid', 'isRecurring', 'groupId', 
-    'destinationAccountId', 'limit', 'closingDay', 'dueDay', 'paymentMethod'
+    'destinationAccountId', 'limit', 'closingDay', 'dueDay', 'paymentMethod', 'creditCardId'
   ];
   camelKeys.forEach(key => delete mapped[key]);
 
@@ -81,12 +82,12 @@ const sanitizePayload = (tableName, data) => {
   const whitelists = {
     categories: ['name', 'icon', 'color', 'type'],
     wallets: ['name', 'balance', 'color', 'type'],
-    cards: ['name', 'limit_amount', 'closing_day', 'due_day', 'digits', 'color', 'flag'],
+    credit_cards: ['name', 'limit_amount', 'closing_day', 'due_day', 'digits', 'color', 'brand'],
     family_members: ['name', 'relation', 'icon', 'color'],
     transaction_splits: ['transaction_id', 'member_id', 'amount'],
     transactions: [
       'description', 'amount', 'date', 'type', 'is_paid', 'is_recurring', 
-      'category_id', 'family_member_id', 'wallet_id', 'card_id', 
+      'category_id', 'family_member_id', 'wallet_id', 'credit_card_id', 
       'destination_wallet_id', 'notes'
     ]
   };
@@ -159,26 +160,26 @@ export const deleteAccount = (id) =>
   execute(supabase.from('wallets').update({ deleted_at: new Date() }).eq('id', id));
 
 
-/** 💳 CARDS */
+/** 💳 CREDIT CARDS */
 export const getCards = () => 
-  execute(supabase.from('cards').select('*').is('deleted_at', null))
+  execute(supabase.from('credit_cards').select('*').is('deleted_at', null))
     .then(rows => rows.map(toCamel));
 
 export const createCard = async (data) => {
   const { data: { user } } = await supabase.auth.getUser();
-  const payload = sanitizePayload('cards', toSnake(data));
-  return execute(supabase.from('cards').insert({ ...payload, user_id: user.id }).select())
+  const payload = sanitizePayload('credit_cards', toSnake(data));
+  return execute(supabase.from('credit_cards').insert({ ...payload, user_id: user.id }).select())
     .then(rows => toCamel(rows[0]));
 };
 
 export const updateCard = (id, data) => {
-  const payload = sanitizePayload('cards', toSnake(data));
-  return execute(supabase.from('cards').update(payload).eq('id', id).select())
+  const payload = sanitizePayload('credit_cards', toSnake(data));
+  return execute(supabase.from('credit_cards').update(payload).eq('id', id).select())
     .then(rows => toCamel(rows[0]));
 };
 
 export const deleteCard = (id) => 
-  execute(supabase.from('cards').update({ deleted_at: new Date() }).eq('id', id));
+  execute(supabase.from('credit_cards').update({ deleted_at: new Date() }).eq('id', id));
 
 
 /** 👥 FAMILY */

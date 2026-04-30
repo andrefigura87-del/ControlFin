@@ -6,7 +6,7 @@ const {
 
 import { AuthProvider, useAuth } from './core/AuthContext';
 import ProtectedRoute from './shared/components/ProtectedRoute';
-import { useFinance } from './features/transactions/useFinance';
+import { useFinance, FinanceProvider } from './features/transactions/useFinance';
 import DynamicIcon from './shared/components/DynamicIcon';
 import EmojiIcon from './shared/components/EmojiIcon';
 import Modal from './shared/components/Modal';
@@ -17,6 +17,7 @@ import DashboardView from './features/dashboard/DashboardView';
 import TransactionsView from './features/transactions/TransactionsView';
 import FamilyView from './features/family/FamilyView';
 import SettingsView from './features/settings/SettingsView';
+import CardsView from './features/cards/CardsView';
 
 function FinanceManager() {
   const { data, metrics, loading, utils, operations } = useFinance();
@@ -85,7 +86,8 @@ function FinanceManager() {
     const emojiGroups = {
       Receita: ['salario', 'reembolso', 'investimentos', '💰', '💵', '📥', '📈'],
       Despesa: ['alimentacao', 'transporte', 'moradia', 'saude', 'mercado', 'educacao', 'lazer', 'vestuario', 'pets', 'viagens', 'academia', 'emprestimo', 'eletrodomesticos', 'internet_telefone', 'assinaturas', '🍔', '🚗', '💊', '💸', '📤'],
-      Reserva: ['investimentos', 'cartao_credito', '🏦', '💳', '🤝']
+      Reserva: ['investimentos', 'cartao_credito', '🏦', '💳', '🤝'],
+      Transferência: ['investimentos', '🤝', '🏦', '💳', '🔄', '🔁', '📲', '💸']
     };
 
     const isHex = item?.color?.startsWith('#');
@@ -124,6 +126,7 @@ function FinanceManager() {
             >
               <option>Despesa</option>
               <option>Receita</option>
+              <option>Transferência</option>
               <option>Reserva</option>
             </select>
           </div>
@@ -279,25 +282,7 @@ function FinanceManager() {
                 </div>
              </div>
           )}
-           {activeTab === 'cards' && (
-             <div>
-                <ListHeader title="Cartões de Crédito" icon={CardIcon} onAdd={() => { setEditingItem(null); setModalType('card'); }} />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {metrics.enrichedCards.map(c => (
-                    <CreditCard 
-                      key={c.id} 
-                      card={c} 
-                      variant="full" 
-                      invoice={c.currentInvoice} 
-                      availableLimit={c.availableLimit} 
-                      formatMoney={formatMoney} 
-                      onEdit={(i)=>{setEditingItem(i); setModalType('card');}} 
-                      onDelete={(id,t)=>{setDeleteContext({id,collection:'cards',title:t}); setModalType('delete');}} 
-                    />
-                  ))}
-                </div>
-             </div>
-          )}
+           {activeTab === 'cards' && <CardsView />}
           {activeTab === 'categories' && (
              <div>
                 <ListHeader title="Categorias" icon={Tags} onAdd={() => { setEditingItem(null); setModalType('category'); }} />
@@ -357,7 +342,9 @@ export default function App() {
   return (
     <AuthProvider>
       <ProtectedRoute>
-        <FinanceManager />
+        <FinanceProvider>
+          <FinanceManager />
+        </FinanceProvider>
       </ProtectedRoute>
     </AuthProvider>
   );
